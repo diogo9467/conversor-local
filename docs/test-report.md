@@ -69,3 +69,11 @@ O relato posterior do usuário mostrou que um vínculo `attachedTemplate` bloque
 Suíte atual: **26/26 testes pytest aprovados em 80,79 segundos**. Três DOCX reais foram convertidos em cópias privadas, com 11 páginas em cada PDF e hashes originais preservados. Um teste HTTP confirmou zero consultas ao modelo externo. O motor instalado foi atualizado em dois arquivos e o documento original do erro gerou um PDF válido de 11 páginas na mesma pasta. A primeira página publicada foi inspecionada visualmente.
 
 Detalhes, métricas e limites: `docs/external-template-fix.md`. O XML atual em `test-results/integration.xml` corresponde aos 26 testes; o pacote `artifacts/ConversorLocal-1.0.0-test-evidence.zip` preserva a evidência histórica dos 15 testes da primeira versão. Os testes nativos, de instalação/desinstalação e de interface descritos acima são resultados da 1.0.0, não novas execuções nesta correção.
+
+## Atualização 1.0.2 — aparência
+
+As janelas de configurações, progresso e resultados receberam novo layout, tipografia, cores, cartões e botões. O motor, núcleo de conversão, integração com o Explorador e `Program.cs` permaneceram iguais. Foram conferidos 280 arquivos do motor por SHA-256 e a DLL de shell, sem diferenças.
+
+**26/26 testes pytest aprovados em 103,69 segundos**, registrados separadamente em `test-results/ui-refresh/integration.xml`. A interface foi inspecionada no Windows e os botões Salvar, Cancelar e Fechar foram exercitados. Uma conversão PDF → PPTX pela interface instalada gerou três slides na mesma pasta, com origem preservada. O cancelamento pela interface final publicou nenhuma saída e preservou a origem. Os últimos ajustes de pintura/estado foram compilados e verificados na instalação; o resultado final permanece em 100%.
+
+Detalhes, evidências e limites: `docs/ui-refresh.md`. A versão 1.0.2 não repete o ciclo completo de desinstalação/reinstalação; a atualização local substitui o host e preserva os motores. Os resultados históricos das versões anteriores continuam identificados em suas respectivas seções e pacotes.

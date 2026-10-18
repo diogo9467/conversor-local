@@ -4,7 +4,7 @@ Aplicativo gratuito e offline para Windows 10/11 **x64**, com C#/.NET 10, uma ex
 
 ## Instalação e uso
 
-1. Abra `artifacts/ConversorLocal-1.0.1-win-x64-Setup.exe`.
+1. Abra `artifacts/ConversorLocal-1.0.2-win-x64-Setup.exe`.
 2. Instale para seu usuário. Não são necessários administrador, Python, Office, LibreOffice pré-instalado, conta ou internet.
 3. No Explorador, selecione um ou vários arquivos e clique com o botão direito. No Windows 11, abra **Mostrar mais opções**.
 4. Em **Converter arquivo**, escolha a operação. A janela permite acompanhar e cancelar.

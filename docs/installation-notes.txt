@@ -1,4 +1,4 @@
-CONVERSOR LOCAL 1.0.1
+CONVERSOR LOCAL 1.0.2
 
 O instalador inclui .NET, motor de PDF, LibreOffice e OCR local. Depois da instalação, as conversões não precisam de internet, conta, Python ou Microsoft Office.
 
