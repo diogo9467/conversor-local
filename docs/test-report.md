@@ -38,11 +38,19 @@ Execução final de `tools/test.ps1`: **15 testes pytest aprovados**, **10 verif
 
 ## Instalação e Explorador
 
-A validação do instalador e do fluxo acionado pelo menu será registrada aqui após executar o pacote final. O menu moderno sem assinatura não é instalado nem considerado validado. O sparse MSIX foi empacotado pelo MakeAppx oficial; `/nv` é o modo previsto pela Microsoft para referências a arquivos externos.
+O instalador EXE foi executado para o usuário atual e retornou **0**, sem pedir reinicialização. Foram comparados por tamanho e SHA-256 **19.985 arquivos instalados**, totalizando **2.080.799.320 bytes**: nenhum ausente e nenhuma diferença. Evidência: `test-results/installed-payload.json`.
+
+Uma conversão PDF → DOCX foi executada com o host e os motores na pasta instalada `%LOCALAPPDATA%/Programs/ConversorLocal`, retornando **0**. Isso confirma a execução após mudar o local dos binários. Evidência: `test-results/relocated-conversion.json`.
+
+A desinstalação retornou **0**, retirou as quatro chaves próprias (três tipos e a classe COM) e removeu a pasta instalada, sem pedir reinicialização. As associações padrão de PDF/DOCX/PPTX foram comparadas e permaneceram idênticas. Depois, o mesmo pacote foi reinstalado e retornou **0**. O aplicativo ficou instalado para uso. Evidência: `test-results/install-lifecycle.json`, `install.log`, `uninstall.log` e `reinstall.log`.
+
+**O clique pelo menu do Explorador não foi validado até o fim.** A pasta de demonstração foi aberta com dois PDFs, mas, ao retomar a automação depois da reinstalação, o controle de tela informou interrupção pelo usuário com a tecla física Esc. Nenhuma ação posterior de interface foi executada. Registro das chaves e testes COM aprovados não foram contados como prova visual do menu. A atualização imediata da pasta, a aparência e a ordenação após um clique real continuam pendentes de validação manual.
+
+O menu moderno sem assinatura não foi instalado nem considerado validado. O sparse MSIX foi empacotado pelo MakeAppx oficial; `/nv` é o modo previsto pela Microsoft para referências a arquivos externos.
 
 ## Correção encontrada durante os testes
 
-A primeira execução completa teve 13 testes aprovados e um caso de OCR reprovado: a biblioteca descartava texto invisível. A validação impediu publicar um DOCX vazio. O backend passou a selecionar o modo OCR por página, com regressão para PDF misto. Após reconstruir o executável do motor, a suíte final teve 15/15 aprovados. Esse histórico não foi omitido nem contado como aprovação.
+Uma execução inicial no sandbox não conseguiu iniciar processos Win32 e renomear arquivos; esses erros de ambiente não foram tratados como validação do produto. Na primeira execução dos binários fora do sandbox, houve 13 testes aprovados e um caso de OCR reprovado: a biblioteca descartava texto invisível. A validação impediu publicar um DOCX vazio. O backend passou a selecionar o modo OCR por página, com regressão para PDF misto. Após reconstruir o executável do motor, a suíte final teve 15/15 aprovados. Esse histórico não foi contado como aprovação.
 
 ## Limites da evidência
 

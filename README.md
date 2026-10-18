@@ -26,7 +26,7 @@ Em **Iniciar → Conversor Local → Configurações**, é possível ativar/desa
 
 ### Windows 11 e assinatura
 
-Esta edição tem instalador **sem assinatura digital** e oferece integração operacional no menu clássico. O Windows pode mostrar editor desconhecido. O aplicativo não importa certificados, muda políticas, desativa verificações ou reinicia o Explorador.
+Esta edição tem instalador **sem assinatura digital** e registra a integração no menu clássico. O Windows pode mostrar editor desconhecido. O aplicativo não importa certificados, muda políticas, desativa verificações ou reinicia o Explorador. O instalador e a extensão COM foram testados; a checagem visual de uma conversão acionada no Explorador foi interrompida com Esc e permanece pendente no relatório de testes.
 
 A extensão para o menu moderno e seu manifesto de identidade estão implementados. O pacote `artifacts/ConversorLocal-Shell-1.0.0-x64-unsigned.msix` foi gerado pelo MakeAppx oficial, mas **não pode ser instalado normalmente sem assinatura confiável**. O fluxo de assinatura/instalação está em [docs/windows-shell.md](docs/windows-shell.md). Não confundir um MSIX empacotado com uma integração moderna instalada/testada.
 
