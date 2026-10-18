@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "shell": { "clsid": "EDBFA846-34E1-41EC-9FF9-144E71B1763B", "dll": "Conversor.Shell.v3.dll" },
+  "targets": [
+    { "id": "pdf", "label": "Converter para PDF" },
+    { "id": "docx", "label": "Converter para DOCX" },
+    { "id": "pptx", "label": "Converter para PPTX" },
+    { "id": "odt", "label": "Converter para ODT" },
+    { "id": "rtf", "label": "Converter para RTF" },
+    { "id": "txt", "label": "Converter para TXT" },
+    { "id": "odp", "label": "Converter para ODP" },
+    { "id": "xlsx", "label": "Converter para XLSX" },
+    { "id": "ods", "label": "Converter para ODS" },
+    { "id": "png", "label": "Converter para PNG" },
+    { "id": "jpg", "label": "Converter para JPG" },
+    { "id": "webp", "label": "Converter para WEBP" },
+    { "id": "bmp", "label": "Converter para BMP" },
+    { "id": "tiff", "label": "Converter para TIFF" }
+  ],
+  "sources": {
+    "pdf":  { "family": "pdf",   "targets": ["docx", "pptx", "txt"] },
+    "docx": { "family": "word",  "targets": ["pdf", "odt", "rtf", "txt"] },
+    "odt":  { "family": "word",  "targets": ["pdf", "docx", "rtf", "txt"] },
+    "rtf":  { "family": "word",  "targets": ["pdf", "docx", "odt", "txt"] },
+    "txt":  { "family": "word",  "targets": ["pdf", "docx", "odt", "rtf"] },
+    "pptx": { "family": "slides","targets": ["pdf", "odp"] },
+    "odp":  { "family": "slides","targets": ["pdf", "pptx"] },
+    "xlsx": { "family": "sheet", "targets": ["pdf", "ods"] },
+    "ods":  { "family": "sheet", "targets": ["pdf", "xlsx"] },
+    "png":  { "family": "image", "targets": ["pdf", "jpg", "webp", "bmp", "tiff"] },
+    "jpg":  { "family": "image", "targets": ["pdf", "png", "webp", "bmp", "tiff"] },
+    "jpeg": { "family": "image", "targets": ["pdf", "png", "webp", "bmp", "tiff"] },
+    "webp": { "family": "image", "targets": ["pdf", "png", "jpg", "bmp", "tiff"] },
+    "bmp":  { "family": "image", "targets": ["pdf", "png", "jpg", "webp", "tiff"] },
+    "tif":  { "family": "image", "targets": ["pdf", "png", "jpg", "webp", "bmp"] },
+    "tiff": { "family": "image", "targets": ["pdf", "png", "jpg", "webp", "bmp"] }
+  },
+  "groups": [
+    { "name": "Documentos", "formats": "DOCX · ODT · RTF · TXT · PDF" },
+    { "name": "Apresentações", "formats": "PPTX · ODP · PDF" },
+    { "name": "Planilhas", "formats": "XLSX · ODS · PDF" },
+    { "name": "Imagens", "formats": "PNG · JPG · WEBP · BMP · TIFF · PDF" }
+  ]
+}

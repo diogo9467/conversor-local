@@ -112,7 +112,7 @@ internal static class Program
                     break;
             }
         }
-        if (target is not ("pdf" or "docx" or "pptx")) throw new ArgumentException("Escolha PDF, DOCX ou PPTX como destino.");
+        if (!Formats.TargetIds.Contains(target)) throw new ArgumentException("Formato de destino não suportado. Use uma das opções do menu Converter arquivo.");
         return new(target, files.Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(), noUi, report, ocr);
     }
 

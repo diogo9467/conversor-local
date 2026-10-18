@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import zipfile
+from catalog import generate
 
 ROOT=Path(__file__).resolve().parents[1]
 TOOLS=ROOT/'.tools'
@@ -38,9 +39,13 @@ def icons():
     for name,size in [('StoreLogo',50),('Square150x150Logo',150),('Square44x44Logo',44)]: base.resize((size,size)).save(dest/(name+'.png'))
 
 def native():
+    catalog=generate()
     APP.mkdir(parents=True,exist_ok=True)
     run([TOOLS/'w64devkit'/'bin'/'g++.exe','-std=c++17','-O2','-shared','-static','-static-libgcc','-static-libstdc++',
-         ROOT/'src'/'Conversor.Shell'/'ContextMenu.cpp','-o',APP/'Conversor.Shell.dll','-lole32','-lshell32','-lshlwapi','-luuid','-Wl,--kill-at'])
+         '-I',ROOT/'.build/generated',ROOT/'src'/'Conversor.Shell'/'ContextMenu.cpp','-o',APP/catalog['shell']['dll'],'-lole32','-lshell32','-lshlwapi','-luuid','-Wl,--kill-at'])
+    for name in ['Conversor.Shell.dll','Conversor.Shell.v2.dll']:
+        legacy=APP/name
+        if legacy.is_file():legacy.unlink()
 
 def app():
     run([DOTNET,'publish','src/Conversor.App/Conversor.App.csproj','-c','Release','-r','win-x64','--self-contained','true',
@@ -54,7 +59,7 @@ def engine():
          '--distpath',ROOT/'.build'/'engine-dist','--workpath',ROOT/'.build'/'engine-temp','--specpath',ROOT/'.build',
          '--collect-all','pymupdf','--collect-data','docx','--collect-data','pptx','--hidden-import','pdf2docx',
          '--hidden-import','cv2','--hidden-import','PIL._imaging','--exclude-module','pytest','--exclude-module','reportlab',
-         '--exclude-module','tkinter',ROOT/'engine'/'worker.py'])
+         '--exclude-module','tkinter','--add-data',str(ROOT/'formats.json')+':.',ROOT/'engine'/'worker.py'])
     shutil.copytree(ROOT/'.build'/'engine-dist'/'Conversor.Engine',APP/'engine',dirs_exist_ok=True)
 
 def office():
@@ -77,12 +82,13 @@ def bundle_sources():
             if not (ROOT/folder).exists(): continue
             for p in (ROOT/folder).rglob('*'):
                 if p.is_file() and not any(x in p.parts for x in ['bin','obj','__pycache__']): archive.write(p,p.relative_to(ROOT))
-        for name in ['README.md','LICENSE','THIRD-PARTY-NOTICES.md','global.json','.gitignore','.gitattributes','VERSION']:
+        for name in ['README.md','LICENSE','THIRD-PARTY-NOTICES.md','global.json','.gitignore','.gitattributes','VERSION','formats.json']:
             if (ROOT/name).exists():archive.write(ROOT/name,name)
     for name in ['README.md','LICENSE','THIRD-PARTY-NOTICES.md']:
         if (ROOT/name).exists():shutil.copy2(ROOT/name,APP/name)
 
 def installer():
+    generate()
     run([TOOLS/'inno'/'ISCC.exe','/Qp',ROOT/'installer'/'ConversorLocal.iss'])
 
 def main():

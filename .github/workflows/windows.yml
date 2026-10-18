@@ -17,19 +17,19 @@ jobs:
           python-version: '3.12'
           architecture: x64
       - name: Provision private dependencies
-        shell: powershell
+        shell: pwsh
         run: ./tools/prepare.ps1
       - name: Build native shell, self-contained host and offline engine
-        shell: powershell
+        shell: pwsh
         run: .tools/build-python/Scripts/python.exe tools/build.py --steps icons,native,app,engine,office
       - name: Test actual Windows binaries
-        shell: powershell
+        shell: pwsh
         run: ./tools/test.ps1
       - name: Package unsigned modern identity
-        shell: powershell
+        shell: pwsh
         run: ./tools/package-modern.ps1
       - name: Package sources and setup
-        shell: powershell
+        shell: pwsh
         run: .tools/build-python/Scripts/python.exe tools/build.py --steps sources,installer
       - uses: actions/upload-artifact@v4
         if: always()

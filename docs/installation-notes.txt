@@ -1,12 +1,18 @@
-CONVERSOR LOCAL 1.0.2
+CONVERSOR LOCAL 1.1.0
 
 O instalador inclui .NET, motor de PDF, LibreOffice e OCR local. Depois da instalação, as conversões não precisam de internet, conta, Python ou Microsoft Office.
 
-Uso: clique com o botão direito em PDF, DOCX ou PPTX e escolha Converter arquivo. No Windows 11, esta edição sem assinatura usa Mostrar mais opções.
+Uso: abra Configurações do Conversor Local no menu Iniciar, clique em Converter arquivos, selecione os documentos e escolha o formato. Somente destinos compatíveis com todos os selecionados são oferecidos.
+
+A extensão do Explorador também está incluída, no menu clássico Mostrar mais opções. A validação nativa e o despacho via API foram concluídos; a exibição e o clique pelo Explorador nesta sessão permanecem pendentes. Use a seleção na própria janela do programa.
+
+Documentos: DOCX, ODT, RTF e TXT entre si e para PDF. Apresentações: PPTX e ODP entre si e para PDF. Planilhas: XLSX e ODS entre si e para PDF. Imagens: PNG, JPG/JPEG, WEBP, BMP e TIF/TIFF entre formatos compatíveis e para PDF. PDF também pode gerar DOCX, PPTX e TXT.
 
 Os resultados são criados junto dos originais. Nomes existentes recebem (1), (2), etc. Nenhum original é substituído.
 
 PDF para DOCX pode alterar layout e paginação. OCR precisa de revisão. PDF para PPTX cria um slide por página com uma imagem da página.
+
+TXT não preserva imagens nem formatação. JPG usa compressão com perda; transparência recebe fundo branco em JPG/BMP/PDF. Imagens com vários quadros geram PDF/TIFF; outros destinos são recusados sem descartar páginas. RTF com campos/objetos e documentos com conteúdo externo não incorporado são recusados.
 
 Este instalador não tem assinatura digital. O Windows pode exibir um aviso de editor desconhecido. O programa não altera os mecanismos de segurança do sistema.
 

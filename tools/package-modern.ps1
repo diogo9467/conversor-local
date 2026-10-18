@@ -3,11 +3,14 @@ $ErrorActionPreference = 'Stop'
 $project = Split-Path -Parent $PSScriptRoot
 $staging = Join-Path $project '.build\modern'
 New-Item -ItemType Directory -Force -Path $staging | Out-Null
-Copy-Item -LiteralPath (Join-Path $project 'installer\modern\AppxManifest.xml') -Destination $staging
+& (Join-Path $project '.tools\build-python\Scripts\python.exe') (Join-Path $project 'tools\catalog.py')
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao gerar o catálogo de formatos.' }
+Copy-Item -LiteralPath (Join-Path $project '.build\generated\AppxManifest.xml') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $project 'installer\Assets') -Destination $staging -Recurse -Force
 $makeAppx = Get-ChildItem -LiteralPath (Join-Path $project '.tools\windows-sdk') -Filter makeappx.exe -Recurse | Where-Object FullName -Match '\\x64\\' | Select-Object -First 1
 if (!$makeAppx) { throw 'MakeAppx não encontrado. Execute tools/dependencies.py.' }
-$package = Join-Path $project 'artifacts\ConversorLocal-Shell-1.0.0-x64-unsigned.msix'
+$version = (Get-Content -LiteralPath (Join-Path $project 'VERSION') -Raw).Trim()
+$package = Join-Path $project ('artifacts\ConversorLocal-Shell-' + $version + '-x64-unsigned.msix')
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $package) | Out-Null
 & $makeAppx.FullName pack /o /d $staging /nv /p $package
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao gerar o pacote MSIX.' }

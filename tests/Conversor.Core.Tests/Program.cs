@@ -27,8 +27,12 @@ try
     Check(!Directory.GetFiles(root).Any(p => p.EndsWith(".partial")), "no incomplete files remain");
     Directory.CreateDirectory(Path.Combine(root, "Artigo científico & revisão.pptx"));
     Check(AtomicPublisher.Publish(valid, source, "pptx").EndsWith(" (1).pptx"), "directory at target name is never replaced");
-    Check(Formats.IsValid("file.DOCX", "pdf") && Formats.IsValid("file.PPTX", "pdf") && Formats.IsValid("file.PDF", "docx") && Formats.IsValid("file.pdf", "pptx"), "all four and only valid routes");
-    Check(!Formats.IsValid("file.pdf", "pdf") && !Formats.IsValid("file.txt", "docx"), "invalid routes rejected");
+    Check(Formats.IsValid("file.DOCX", "pdf") && Formats.IsValid("file.PPTX", "pdf") && Formats.IsValid("file.PDF", "docx") && Formats.IsValid("file.pdf", "pptx"), "original routes preserved");
+    Check(Formats.IsValid("file.TXT", "docx") && Formats.IsValid("file.ODT", "rtf") && Formats.IsValid("file.rtf", "odt") && Formats.IsValid("file.pdf", "txt"), "document and text routes accepted");
+    Check(Formats.IsValid("file.XLSX", "ods") && Formats.IsValid("file.ods", "xlsx") && Formats.IsValid("file.ODS", "pdf") && Formats.IsValid("file.odp", "pptx"), "spreadsheet and presentation routes accepted");
+    Check(Formats.IsValid("file.JPEG", "png") && Formats.IsValid("file.TIF", "pdf") && Formats.IsValid("file.webp", "tiff"), "image aliases accepted");
+    Check(!Formats.IsValid("file.pdf", "pdf") && !Formats.IsValid("file.jpeg", "jpg") && !Formats.IsValid("file.tif", "tiff"), "self conversions and aliases rejected");
+    Check(!Formats.IsValid("file.xlsx", "docx") && !Formats.IsValid("file.pdf", "xlsx") && !Formats.IsValid("file.exe", "pdf"), "unsupported cross family routes rejected");
     Console.WriteLine($"{passed} assertions passed.");
     return 0;
 }

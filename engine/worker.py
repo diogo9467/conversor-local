@@ -13,13 +13,13 @@ import traceback
 import zipfile
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+from extra_formats import (ConversionError,CATALOG,validate_xlsx,validate_odf,validate_rtf,normalized_text,
+                           validate_text,pdf_text,convert_image,validate_image)
 
 # The wire protocol is JSONL; third-party logs are redirected to stderr.
 if sys.stdout is not None: sys.stdout.reconfigure(encoding='utf-8')
 if sys.stderr is not None: sys.stderr.reconfigure(encoding='utf-8')
 PROTOCOL = sys.stdout
-
-class ConversionError(Exception): pass
 
 def emit(kind, **values):
     print(json.dumps(dict(type=kind, **values),ensure_ascii=False),file=PROTOCOL,flush=True)
@@ -94,7 +94,12 @@ def prepare_office_input(source,job):
     document image: do not fetch it and do not reject an otherwise self-contained
     document. Genuine external content still goes through the strict validator.
     """
-    validate_ooxml(source,source.suffix[1:])
+    kind=source.suffix[1:]
+    if kind in ('odt','odp','ods'):validate_odf(source,kind);return source
+    if kind=='xlsx':validate_xlsx(source);return source
+    if kind=='rtf':validate_rtf(source);return source
+    if kind=='txt':return normalized_text(source,job)
+    validate_ooxml(source,kind)
     relationship_part='word/_rels/settings.xml.rels'
     settings_part='word/settings.xml'
     template_types={
@@ -144,7 +149,7 @@ def prepare_office_input(source,job):
     validate_ooxml(prepared,source.suffix[1:],check_external=True)
     return prepared
 
-def office_pdf(source, output, runtime, job):
+def office_export(source, output, runtime, job, target='pdf'):
     source=prepare_office_input(source,job)
     soffice=runtime/'libreoffice'/'program'/'soffice.com'
     if not soffice.exists(): raise ConversionError('LibreOffice incorporado não encontrado. Reinstale o aplicativo.')
@@ -160,16 +165,20 @@ def office_pdf(source, output, runtime, job):
 </oor:items>''',encoding='utf-8')
     outdir=job/'office-output'
     outdir.mkdir(exist_ok=True)
-    mode='writer_pdf_Export' if source.suffix=='.docx' else 'impress_pdf_Export'
-    options='{"ExportBookmarks":{"type":"boolean","value":"true"},"ExportNotesPages":{"type":"boolean","value":"false"},"ExportHiddenSlides":{"type":"boolean","value":"true"}}'
+    family=CATALOG['sources'][source.suffix[1:]]['family']
+    filters={'docx':'Office Open XML Text','odt':'writer8','rtf':'Rich Text Format','txt':'Text (encoded)',
+             'pptx':'Impress MS PowerPoint 2007 XML','odp':'impress8','xlsx':'Calc MS Excel 2007 XML','ods':'calc8'}
+    mode={'word':'writer_pdf_Export','slides':'impress_pdf_Export','sheet':'calc_pdf_Export'}[family] if target=='pdf' else filters[target]
+    options='{"ExportBookmarks":{"type":"boolean","value":"true"},"ExportNotesPages":{"type":"boolean","value":"false"},"ExportHiddenSlides":{"type":"boolean","value":"true"}}' if target=='pdf' else 'UTF8' if target=='txt' else ''
     args=[str(soffice),f'-env:UserInstallation={profile.as_uri()}','--headless','--nologo','--nodefault','--nofirststartwizard','--norestore',
-          '--convert-to',f'pdf:{mode}:{options}','--outdir',str(outdir),str(source)]
+          *(['--infilter=Text (encoded):UTF8,LF,Liberation Mono,en-US'] if source.suffix=='.txt' else []),
+          '--convert-to',f'{target}:{mode}'+(':'+options if options else ''),'--outdir',str(outdir),str(source)]
     progress('Convertendo com LibreOffice local',25)
     completed=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=1500,
                              creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     print(completed.stdout.decode('utf-8',errors='replace'),file=sys.stderr)
     print(completed.stderr.decode('utf-8',errors='replace'),file=sys.stderr)
-    generated=outdir/(source.stem+'.pdf')
+    generated=outdir/(source.stem+'.'+target)
     if completed.returncode or not generated.exists():
         raise ConversionError('O LibreOffice não conseguiu exportar o documento. Verifique se o arquivo está íntegro e sem senha.')
     generated.replace(output)
@@ -283,23 +292,37 @@ def validate_pdf(path, expected=None):
 def run(spec):
     source=Path(spec['source']); output=Path(spec['output']); runtime=Path(spec['runtime']); job=Path(spec['job'])
     target=spec['target']
-    if (source.suffix,target) not in [('.docx','pdf'),('.pptx','pdf'),('.pdf','docx'),('.pdf','pptx')]:
+    entry=CATALOG['sources'].get(source.suffix[1:])
+    if entry is None or target not in entry['targets']:
         raise ConversionError('Operação não suportada.')
     progress('Validando o documento de origem',5)
     expected=None
-    if target=='pdf':
+    if entry['family']=='image':
+        expected=convert_image(source,output,target,warning,progress)
+    elif entry['family']=='pdf':
+        if target=='pptx':expected=pdf_pptx(source,output)
+        elif target=='docx':expected=pdf_docx(source,output,runtime,job,spec.get('ocr',False))
+        else:expected=pdf_text(source,output,runtime,job,spec.get('ocr',False),open_pdf,ocr_document,warning)
+    else:
         if source.suffix=='.pptx':
             validate_ooxml(source,'pptx',check_external=True)
             from pptx import Presentation
             expected=len(Presentation(source).slides)
-        office_pdf(source,output,runtime,job)
-    elif target=='pptx': expected=pdf_pptx(source,output)
-    else: expected=pdf_docx(source,output,runtime,job,spec.get('ocr',False))
+        elif source.suffix=='.odp':expected=validate_odf(source,'odp')
+        office_export(source,output,runtime,job,target)
+        if target=='txt':warning('TXT contém somente texto. Imagens, formatação e layout não são preservados.')
+        elif target!='pdf':warning('Revise fontes, tabelas, fórmulas e recursos específicos do Office após mudar de formato.')
     progress('Reabrindo e validando o arquivo convertido',90)
     if target=='pdf': pages=validate_pdf(output,expected)
-    else:
+    elif target in ('docx','pptx'):
         validate_ooxml(output,target,expected_pages=expected)
         pages=expected or 0
+    elif target in ('odt','odp','ods'):
+        validate_odf(output,target,expected_slides=expected if target=='odp' else None);pages=expected or 0
+    elif target=='xlsx':validate_xlsx(output);pages=0
+    elif target=='rtf':validate_rtf(output,check_active=False);pages=0
+    elif target=='txt':validate_text(output);pages=expected or 0
+    else:validate_image(output,target,expected or 1);pages=expected or 1
     emit('result',success=True,pages=pages)
 
 def main():

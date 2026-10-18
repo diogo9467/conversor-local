@@ -77,3 +77,15 @@ As janelas de configurações, progresso e resultados receberam novo layout, tip
 **26/26 testes pytest aprovados em 103,69 segundos**, registrados separadamente em `test-results/ui-refresh/integration.xml`. A interface foi inspecionada no Windows e os botões Salvar, Cancelar e Fechar foram exercitados. Uma conversão PDF → PPTX pela interface instalada gerou três slides na mesma pasta, com origem preservada. O cancelamento pela interface final publicou nenhuma saída e preservou a origem. Os últimos ajustes de pintura/estado foram compilados e verificados na instalação; o resultado final permanece em 100%.
 
 Detalhes, evidências e limites: `docs/ui-refresh.md`. A versão 1.0.2 não repete o ciclo completo de desinstalação/reinstalação; a atualização local substitui o host e preserva os motores. Os resultados históricos das versões anteriores continuam identificados em suas respectivas seções e pacotes.
+
+## Atualização 1.1.0 — formatos e seleção local
+
+Foram acrescentados ODT, RTF, TXT, ODP, XLSX, ODS, PNG, JPG/JPEG, WEBP, BMP e TIF/TIFF, além de PDF → TXT. O catálogo compartilhado possui 62 pares permitidos, incluindo aliases. A janela do programa agora permite escolher arquivos e somente destinos compatíveis com todo o lote.
+
+**108/108 testes pytest aprovados em 568,77 segundos**, incluindo todos os pares e as regressões anteriores. Após a integração da GUI e da extensão clássica, a comparação do motor confirmou os mesmos 11 membros do CArchive, os mesmos bytes dos membros da biblioteca base, bibliotecas nativas idênticas e rotas de conversão iguais; somente a identidade de shell no catálogo e o empacotamento externo mudaram. A suíte completa não foi repetida após essa etapa. A DLL final passou 23 seleções IExplorerCommand e 23 IContextMenu, IDs de comandos, filtro de comando padrão, invocação inválida e liberação de referências.
+
+O fluxo instalado **Converter arquivos → PNG → JPG** foi executado visualmente, preservou o hash original e produziu 360 × 240 pixels com fundo branco. A API registrada do Shell também despachou PNG → WEBP, preservando transparência e origem. DOCX de ODT foi aberto no Word e XLSX de ODS no Excel, sem pedido de reparo. Onze páginas PDF de oito formatos foram renderizadas e inspecionadas.
+
+O primeiro instalador de validação identificou `checkedonce` desmarcando o menu nas atualizações; o sinalizador foi removido. A tarefa de menu foi restaurada, e uma execução sem sobrescrever a seleção confirmou o registro. O instalador final mantém DLLs idênticas por SHA-256 e não fecha aplicativos automaticamente. Preferências, associações padrão e artefatos anteriores são comparados com o baseline em `extended-formats/install-update.json`.
+
+**O clique visual no menu do Explorador permanece pendente:** nesta sessão o novo comando não foi exibido. O Explorador original não foi reiniciado porque havia uma cópia em andamento. A seleção pela janela do aplicativo foi validada e está disponível. O menu moderno continua sem assinatura e não foi instalado. Detalhes e evidências: `docs/extended-formats.md` e o pacote `ConversorLocal-1.1.0-test-evidence.zip`.

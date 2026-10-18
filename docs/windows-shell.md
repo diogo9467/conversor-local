@@ -2,17 +2,23 @@
 
 ## Integração entregue
 
-`Conversor.Shell.dll` é uma DLL nativa x64 com `IExplorerCommand`, `IEnumExplorerCommand`, `DllGetClassObject` e `DllCanUnloadNow`. O estado dos comandos depende da extensão de todos os arquivos selecionados; o trabalho pesado começa somente em outro processo, após `Invoke`.
+`Conversor.Shell.v3.dll` é uma DLL nativa x64. O menu clássico usa `IShellExtInit`/`IContextMenu` e a seleção `CF_HDROP`; a identidade moderna usa `IExplorerCommand`/`IEnumExplorerCommand`. Ambos compartilham o catálogo e o mesmo despacho JSON para o host. O trabalho pesado começa somente em outro processo.
 
-O instalador registra a COM class `{43CF6A2E-7404-4F6B-9D87-C869F5A11C70}` e `ExplorerCommandHandler` nas chaves próprias `HKCU/Software/Classes/SystemFileAssociations/.pdf|.docx|.pptx/shell/ConversorLocal`. Não usa associação padrão nem altera as políticas do Explorador. A desinstalação remove essas chaves e a classe COM.
+O instalador registra a COM class `{EDBFA846-34E1-41EC-9FF9-144E71B1763B}` em HKCU e o manipulador próprio `Software/Classes/*/shellex/ContextMenuHandlers/ConversorLocal`. A extensão oferece somente destinos comuns aos arquivos selecionados; tipos incompatíveis não recebem o menu. As 16 extensões vêm de `formats.json`, incluindo JPEG e TIF. Não usa associação padrão nem altera políticas. A desinstalação remove a chave do manipulador e a classe COM.
 
-Windows 10 usa esse menu. No Windows 11, abra **Mostrar mais opções**. A extensão usa a seleção real `IShellItemArray`, inclusive para lotes, e despacha todos os caminhos por um arquivo JSON, sem executar um comando por arquivo.
+A atualização 1.1.0 usa uma nova identidade COM e um novo nome de DLL. Assim, a DLL anterior já carregada no Explorador não precisa ser sobrescrita nem o Explorador reiniciado. O instalador remove a classe COM antiga pertencente ao aplicativo e registra a nova; o desinstalador acompanha os novos arquivos e as novas chaves.
+
+Reinstalações mantêm uma DLL de shell cujo SHA-256 já corresponde ao payload, evitando substituição desnecessária de um módulo carregado. A tarefa de menu preserva a seleção anterior; o sinalizador `checkedonce`, que a desmarcava nas atualizações, foi retirado. Veja [Inno Setup: tarefas](https://jrsoftware.org/ishelp/topic_taskssection.htm) e [checagens de instalação](https://jrsoftware.org/ishelp/topic_scriptcheck.htm).
+
+Windows 10 usa o menu clássico. No Windows 11, ele fica em **Mostrar mais opções**. Um lote é despachado por um único JSON, sem executar um comando por arquivo. A GUI do programa também permite selecionar arquivos e o destino compatível.
+
+Validação 1.1.0: 23 seleções para cada interface, IDs de comandos, filtro de comando padrão, invocação inválida e liberação da DLL passaram. Uma seleção PNG foi convertida em WEBP pela API real do Shell (`GetUIObjectOf` → `QueryContextMenu` → `InvokeCommand`), com origem e transparência preservadas. Isso não foi contado como clique visual: nesta sessão o Explorador não exibiu o novo item. O Explorador original, responsável por uma cópia de arquivos em andamento, não foi reiniciado. Use **Converter arquivos** na janela do programa enquanto a verificação visual do menu permanece pendente.
 
 ## Menu moderno e assinatura
 
 A Microsoft exige identidade de pacote para o `IExplorerCommand` aparecer na primeira camada do menu do Windows 11. Estão incluídos:
 
-- Manifesto sparse MSIX em `installer/modern/AppxManifest.xml` com COM surrogate e `windows.fileExplorerContextMenus`.
+- Modelo sparse MSIX em `installer/modern/AppxManifest.xml`; o manifesto final em `.build/generated/AppxManifest.xml` recebe versão, COM class e extensões do catálogo, com COM surrogate e `windows.fileExplorerContextMenus`.
 - Metadados de identidade no manifesto do host C#.
 - Ícones e um pacote unsigned gerado pelo MakeAppx oficial.
 - `tools/package-modern.ps1` para empacotar e, se fornecido um certificado válido, assinar.

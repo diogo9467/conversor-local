@@ -14,6 +14,16 @@
 10. A publicação é o ponto de confirmação. Cancelamento recebido depois dele não transforma um resultado válido em falha.
 11. A pasta recebe `SHCNE_CREATE` e `SHCNE_UPDATEDIR` sem alteração de visualização, ordenação ou foco.
 
+## Catálogo e formatos adicionais
+
+`formats.json` define as rotas usadas pelo núcleo C#, worker Python, tela de configurações e extensão COM. `tools/catalog.py` valida o catálogo e gera o cabeçalho C++, as chaves Inno Setup e o manifesto MSIX em `.build/generated`. Isso impede oferecer uma conversão no menu que o host não aceite. A DLL usa a interseção dos destinos para seleções mistas.
+
+Writer converte DOCX/ODT/RTF/TXT; Impress converte PPTX/ODP; Calc converte XLSX/ODS. Os filtros são explícitos. O perfil privado desliga macros e atualização de vínculos. TXT de entrada é normalizado em outra cópia UTF-8, sem modificar o snapshot. TXT de PDF extrai todas as páginas em ordem, usando o OCR por página quando necessário.
+
+OpenDocument e XLSX são validados por estrutura ZIP/XML, tipo, integridade, limites, scripts/macros e vínculos. RTF é percorrido respeitando escapes, grupos e blocos binários; campos/objetos ativos são recusados na entrada. Na saída, RTF e TXT são reabertos e validados. Imagens usam Pillow, com orientação EXIF aplicada e limites por quadro/total. TIFF/PDF preservam todos os quadros; destinos estáticos recusam entradas multipágina. O PDF de imagem usa o DPI salvo (96 quando ausente/inválido), sem reduzir os pixels, limitando o tamanho físico da página a 200 polegadas.
+
+Os filtros seguem a [documentação oficial do LibreOffice](https://help.libreoffice.org/latest/en-US/text/shared/guide/convertfilters.html). A exportação de planilhas mantém a configuração de impressão; `SinglePageSheets` não é ativado.
+
 ## Protocolo do motor
 
 O executável recebe `--request <job/request.json>`. O JSON contém o snapshot, a saída temporária, o formato, o diretório dos motores e a preferência OCR. `stdout` é reservado para JSONL: `progress`, `warning`, `error`, `result`. Logs de bibliotecas vão para `stderr`. O host não interpreta texto comum como sucesso. O resultado final de lote é opcionalmente gravado por `--report`, utilizado nos testes.

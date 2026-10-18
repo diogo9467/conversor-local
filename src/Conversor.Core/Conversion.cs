@@ -12,9 +12,21 @@ public sealed record ConversionResult(string Source, string? Output, bool Succes
 
 public static class Formats
 {
-    public static bool IsValid(string source, string target) =>
-        (Path.GetExtension(source).ToLowerInvariant(), target.ToLowerInvariant()) is
-        (".docx", "pdf") or (".pptx", "pdf") or (".pdf", "docx") or (".pdf", "pptx");
+    private static readonly Dictionary<string, HashSet<string>> routes;
+    public static IReadOnlyList<string> TargetIds { get; }
+    public static IReadOnlyList<string> SourceExtensions { get; }
+    public static IReadOnlyList<(string Name, string Formats)> Groups { get; }
+    static Formats()
+    {
+        using var stream = typeof(Formats).Assembly.GetManifestResourceStream("Conversor.Core.formats.json")!;
+        using var catalog = JsonDocument.Parse(stream);
+        routes = catalog.RootElement.GetProperty("sources").EnumerateObject().ToDictionary(
+            item => "." + item.Name, item => item.Value.GetProperty("targets").EnumerateArray().Select(t => t.GetString()!).ToHashSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
+        SourceExtensions = routes.Keys.ToArray();
+        TargetIds = catalog.RootElement.GetProperty("targets").EnumerateArray().Select(t => t.GetProperty("id").GetString()!).ToArray();
+        Groups = catalog.RootElement.GetProperty("groups").EnumerateArray().Select(g => (g.GetProperty("name").GetString()!, g.GetProperty("formats").GetString()!)).ToArray();
+    }
+    public static bool IsValid(string source, string target) => routes.TryGetValue(Path.GetExtension(source), out var targets) && targets.Contains(target);
 }
 
 public static class AtomicPublisher

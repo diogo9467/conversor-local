@@ -6,4 +6,5 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <ItemGroup><EmbeddedResource Include="../../formats.json" LogicalName="Conversor.Core.formats.json" /></ItemGroup>
 </Project>
