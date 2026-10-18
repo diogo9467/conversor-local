@@ -1,0 +1,37 @@
+name: Windows offline converter
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  build-test-package:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Provision private dependencies
+        shell: powershell
+        run: ./tools/prepare.ps1
+      - name: Build native shell, self-contained host and offline engine
+        shell: powershell
+        run: .tools/build-python/Scripts/python.exe tools/build.py --steps icons,native,app,engine,office
+      - name: Test actual Windows binaries
+        shell: powershell
+        run: ./tools/test.ps1
+      - name: Package unsigned modern identity
+        shell: powershell
+        run: ./tools/package-modern.ps1
+      - name: Package sources and setup
+        shell: powershell
+        run: .tools/build-python/Scripts/python.exe tools/build.py --steps sources,installer
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Windows-converter-and-test-evidence
+          path: |
+            artifacts/*
+            test-results/integration.xml
+            test-results/*.png

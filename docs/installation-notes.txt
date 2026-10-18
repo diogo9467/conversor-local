@@ -1,0 +1,13 @@
+CONVERSOR LOCAL 1.0
+
+O instalador inclui .NET, motor de PDF, LibreOffice e OCR local. Depois da instalação, as conversões não precisam de internet, conta, Python ou Microsoft Office.
+
+Uso: clique com o botão direito em PDF, DOCX ou PPTX e escolha Converter arquivo. No Windows 11, esta edição sem assinatura usa Mostrar mais opções.
+
+Os resultados são criados junto dos originais. Nomes existentes recebem (1), (2), etc. Nenhum original é substituído.
+
+PDF para DOCX pode alterar layout e paginação. OCR precisa de revisão. PDF para PPTX cria um slide por página com uma imagem da página.
+
+Este instalador não tem assinatura digital. O Windows pode exibir um aviso de editor desconhecido. O programa não altera os mecanismos de segurança do sistema.
+
+A integração com o menu moderno está implementada no código e no manifesto MSIX, mas sua instalação exige uma assinatura confiável. Consulte docs/windows-shell.md no código-fonte.
