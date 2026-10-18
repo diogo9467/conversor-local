@@ -10,7 +10,7 @@ try {
     New-Item -ItemType Directory -Force -Path test-results | Out-Null
     & .tools/dotnet/dotnet.exe run --project tests/Conversor.Core.Tests/Conversor.Core.Tests.csproj -c Release
     if ($LASTEXITCODE -ne 0) { throw 'Testes de publicação falharam.' }
-    & .tools/build-python/Scripts/python.exe -m pytest tests/test_integration.py tests/test_ocr_engine.py -v --junitxml=test-results/integration.xml --basetemp=test-results/pytest-temp
+    & .tools/build-python/Scripts/python.exe -m pytest tests/test_integration.py tests/test_ocr_engine.py tests/test_external_templates.py -v --junitxml=test-results/integration.xml --basetemp=test-results/pytest-temp
     if ($LASTEXITCODE -ne 0) { throw 'Testes de integração falharam.' }
     & .tools/dotnet/dotnet.exe run --project tests/Conversor.Windows.Tests/Conversor.Windows.Tests.csproj -c Release -- (Join-Path $project '.build\app') (Join-Path $project 'test-results\fixtures\Pasta A com acentos\Pesquisa com texto e tabelas.pdf')
     if ($LASTEXITCODE -ne 0) { throw 'Testes de cancelamento/ACL falharam.' }

@@ -4,7 +4,7 @@ Aplicativo gratuito e offline para Windows 10/11 **x64**, com C#/.NET 10, uma ex
 
 ## Instalação e uso
 
-1. Abra `artifacts/ConversorLocal-1.0.0-win-x64-Setup.exe`.
+1. Abra `artifacts/ConversorLocal-1.0.1-win-x64-Setup.exe`.
 2. Instale para seu usuário. Não são necessários administrador, Python, Office, LibreOffice pré-instalado, conta ou internet.
 3. No Explorador, selecione um ou vários arquivos e clique com o botão direito. No Windows 11, abra **Mostrar mais opções**.
 4. Em **Converter arquivo**, escolha a operação. A janela permite acompanhar e cancelar.
@@ -39,7 +39,7 @@ Use **Configurações do Windows → Aplicativos → Conversor Local → Desinst
 - Fontes ausentes, campos, diagramas complexos, objetos OLE, efeitos e animações do Office podem diferir no LibreOffice. Animações não aparecem em PDF estático. Slides ocultos são incluídos na exportação para manter um PDF por slide.
 - PDF não contém a estrutura original de um Word: paginação, colunas, tabelas complexas, fórmulas e ordem de leitura podem mudar. O resultado requer revisão.
 - PDF → PPTX preserva a aparência por imagens (até 200 dpi, máximo de 5.000 pixels por lado e 24 megapixels por página). Os elementos não são editáveis individualmente. PDFs com formatos variados usam margens, sem deformação.
-- Arquivos com senha são recusados com mensagem. Não há prompt de senha nem tentativa de removê-la. PDFs que proíbem cópia e documentos com recursos externos vinculados também são recusados.
+- Arquivos com senha são recusados com mensagem. Não há prompt de senha nem tentativa de removê-la. PDFs que proíbem cópia e documentos que dependem de imagens/dados externos não incorporados também são recusados. Referências a modelos `.dot/.dotm/.dotx` são desligadas somente na cópia temporária: o texto, os estilos e as imagens já gravados no DOCX são preservados, sem acessar o modelo.
 - Arquivos grandes exigem memória, espaço no volume temporário e no volume de origem; há limite de 30 minutos por arquivo. Pacotes Office maiores que 2 GB descompactados ou 30 mil entradas são recusados.
 - Caminhos longos foram previstos no host .NET; os motores recebem cópias com nomes curtos em uma pasta temporária. Nomes que excedam os limites do sistema de arquivos falham, sem redirecionamento.
 - Esta entrega é x64. Windows ARM64 e Windows 32 bits não foram validados.
@@ -51,7 +51,7 @@ Use **Configurações do Windows → Aplicativos → Conversor Local → Desinst
 
 O host não entrega o caminho original ao motor. Cada trabalho usa `%LOCALAPPDATA%/ConversorLocal/jobs/<id>`. A saída é validada antes de copiar para um arquivo `.partial` na pasta de origem e renomear atomicamente sem substituição. Um Job Object do Windows encerra os processos filhos ao fechar o host. Temporários são removidos no encerramento normal, falha ou cancelamento. Um encerramento forçado do sistema pode deixar o snapshot temporário; ele não é publicado como documento final.
 
-Não há cliente HTTP, telemetria, login ou upload no aplicativo. Macros são desativadas no perfil LibreOffice exclusivo. Vínculos externos incorporáveis são recusados antes de abrir no Office headless. Uma pasta não confiável não deve ser usada como destino de instalação; instale no caminho padrão do instalador. O aplicativo não é um sandbox para documentos hostis e deve receber atualizações de seus motores.
+Não há cliente HTTP, telemetria, login ou upload no aplicativo. Macros são desativadas no perfil LibreOffice exclusivo. Modelos externos do Word são desvinculados na cópia privada; imagens/dados que exigiriam acesso externo são recusados antes de abrir no Office headless. Uma pasta não confiável não deve ser usada como destino de instalação; instale no caminho padrão do instalador. O aplicativo não é um sandbox para documentos hostis e deve receber atualizações de seus motores.
 
 Logs JSONL locais ficam em `%LOCALAPPDATA%/ConversorLocal/logs`. Incluem nomes/caminhos e erros, sem enviar informações. Preferências ficam em `settings.json` nessa mesma raiz. Não envie logs a terceiros sem conferir os caminhos que contêm.
 

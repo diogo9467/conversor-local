@@ -77,7 +77,7 @@ def bundle_sources():
             if not (ROOT/folder).exists(): continue
             for p in (ROOT/folder).rglob('*'):
                 if p.is_file() and not any(x in p.parts for x in ['bin','obj','__pycache__']): archive.write(p,p.relative_to(ROOT))
-        for name in ['README.md','LICENSE','THIRD-PARTY-NOTICES.md','global.json','.gitignore']:
+        for name in ['README.md','LICENSE','THIRD-PARTY-NOTICES.md','global.json','.gitignore','.gitattributes','VERSION']:
             if (ROOT/name).exists():archive.write(ROOT/name,name)
     for name in ['README.md','LICENSE','THIRD-PARTY-NOTICES.md']:
         if (ROOT/name).exists():shutil.copy2(ROOT/name,APP/name)

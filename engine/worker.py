@@ -12,6 +12,7 @@ import sys
 import traceback
 import zipfile
 import xml.etree.ElementTree as ET
+from xml.dom import minidom
 
 # The wire protocol is JSONL; third-party logs are redirected to stderr.
 if sys.stdout is not None: sys.stdout.reconfigure(encoding='utf-8')
@@ -62,8 +63,11 @@ def validate_ooxml(path, target, expected_pages=None, check_external=False):
                     root=ET.fromstring(content)
                     if check_external and info.filename.endswith('.rels'):
                         for rel in root:
-                            if rel.get('TargetMode')=='External' and not rel.get('Type','').endswith('/hyperlink'):
-                                raise ConversionError('O documento contém imagens ou dados vinculados externamente. Incorpore os recursos no Office antes de converter offline.')
+                            if rel.get('TargetMode','').lower()=='external' and not rel.get('Type','').endswith('/hyperlink'):
+                                kind=rel.get('Type','').rsplit('/',1)[-1]
+                                if kind=='image':
+                                    raise ConversionError('O documento contém uma imagem vinculada a outro arquivo, sem incorporação completa. Incorpore essa imagem no Office antes de converter offline.')
+                                raise ConversionError('O documento depende de conteúdo externo não incorporado (tipo: '+kind+'). Incorpore esse conteúdo no Office antes de converter offline.')
             if target=='docx':
                 from docx import Document
                 document=Document(path)
@@ -83,8 +87,65 @@ def validate_ooxml(path, target, expected_pages=None, check_external=False):
     except ConversionError: raise
     except Exception as exc: raise ConversionError('Não foi possível validar o documento Office: arquivo corrompido ou estrutura inválida.') from exc
 
+def prepare_office_input(source,job):
+    """Detach an attached Word template in the private job, never in the original.
+
+    DOCX stores its own styles/content. An attached .dot/.dotm is not a missing
+    document image: do not fetch it and do not reject an otherwise self-contained
+    document. Genuine external content still goes through the strict validator.
+    """
+    validate_ooxml(source,source.suffix[1:])
+    relationship_part='word/_rels/settings.xml.rels'
+    settings_part='word/settings.xml'
+    template_types={
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate',
+        'http://purl.oclc.org/ooxml/officeDocument/relationships/attachedTemplate',
+    }
+    word_namespaces={
+        'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
+        'http://purl.oclc.org/ooxml/wordprocessingml/main',
+    }
+    relationship_namespaces={
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+        'http://purl.oclc.org/ooxml/officeDocument/relationships',
+    }
+    prepared=source
+    with zipfile.ZipFile(source) as archive:
+        if source.suffix=='.docx' and relationship_part in archive.namelist():
+            # DOM retains prefix declarations used by mc:Ignorable. ElementTree
+            # reserialization can drop these declarations and damage Office XML.
+            relationships=minidom.parseString(archive.read(relationship_part))
+            detached=set()
+            for relation in list(relationships.documentElement.childNodes):
+                if (relation.nodeType==relation.ELEMENT_NODE and relation.localName=='Relationship'
+                    and relation.getAttribute('TargetMode').lower()=='external'
+                    and relation.getAttribute('Type') in template_types):
+                    detached.add(relation.getAttribute('Id'))
+                    relationships.documentElement.removeChild(relation)
+            if detached:
+                if settings_part not in archive.namelist(): raise ConversionError('Configurações do Word ausentes no documento.')
+                settings=minidom.parseString(archive.read(settings_part))
+                for node in list(settings.getElementsByTagName('*')):
+                    if node.namespaceURI not in word_namespaces: continue
+                    if node.localName=='attachedTemplate' and any(node.getAttributeNS(ns,'id') in detached for ns in relationship_namespaces):
+                        node.parentNode.removeChild(node)
+                    elif node.localName=='linkStyles':
+                        # Keep the styles saved in the DOCX rather than applying
+                        # styles from the now-detached template on load.
+                        node.parentNode.removeChild(node)
+                replacements={relationship_part:relationships.toxml(encoding='utf-8'),settings_part:settings.toxml(encoding='utf-8')}
+                prepared=job/'input-offline.docx'
+                if prepared.resolve()==source.resolve(): raise ConversionError('A cópia temporária não pode substituir a origem.')
+                with zipfile.ZipFile(prepared,'x') as output:
+                    for entry in archive.infolist():
+                        data=replacements[entry.filename] if entry.filename in replacements else archive.read(entry)
+                        output.writestr(entry,data)
+                print('Attached Word template detached from the private conversion snapshot; embedded document content retained.',file=sys.stderr)
+    validate_ooxml(prepared,source.suffix[1:],check_external=True)
+    return prepared
+
 def office_pdf(source, output, runtime, job):
-    validate_ooxml(source,source.suffix[1:],check_external=True)
+    source=prepare_office_input(source,job)
     soffice=runtime/'libreoffice'/'program'/'soffice.com'
     if not soffice.exists(): raise ConversionError('LibreOffice incorporado não encontrado. Reinstale o aplicativo.')
     profile=job/'lo-profile'

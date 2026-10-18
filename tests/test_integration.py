@@ -47,6 +47,43 @@ def test_docx_pdf_multipage_header_table_image():
         assert all('CABECALHO' in p.get_text() and p.get_images() for p in pdf)
         assert 'Quantidade' in pdf[0].get_text()
 
+def test_docx_pdf_external_template_keeps_embedded_content():
+    from test_external_templates import with_template
+    source=with_template(A/'Artigo científico & revisão.docx',A/'Documento com modelo externo.docx')
+    code,results=convert([source],'pdf');assert code==0,results
+    with fitz.open(results[0]['Output']) as pdf:
+        assert len(pdf)==3
+        assert all(f'MARCADOR_DOCX_{i+1}' in pdf[i].get_text() for i in range(3))
+        assert all('CABECALHO' in p.get_text() and p.get_images() for p in pdf)
+        assert 'Quantidade' in pdf[0].get_text()
+
+def test_docx_pdf_does_not_fetch_external_template():
+    import http.server
+    import threading
+    from test_external_templates import with_template
+    hits=[]
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path);self.send_response(404);self.end_headers()
+        def do_HEAD(self):self.do_GET()
+        def do_POST(self):self.do_GET()
+        def log_message(self,*args):pass
+    with http.server.ThreadingHTTPServer(('127.0.0.1',0),Handler) as server:
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:
+            target=f'http://127.0.0.1:{server.server_port}/external-template.dotm'
+            source=with_template(A/'Artigo científico & revisão.docx',A/'Modelo HTTP não deve ser consultado.docx',target=target)
+            code,results=convert([source],'pdf');assert code==0,results
+            assert hits==[],f'External template was requested: {hits}'
+        finally:server.shutdown();thread.join(timeout=5)
+
+def test_docx_pdf_genuine_external_image_still_fails():
+    from test_external_templates import with_template
+    source=with_template(A/'Artigo científico & revisão.docx',A/'Documento com imagem realmente externa.docx',extra_type='image')
+    code,results=convert([source],'pdf')
+    assert code==1 and results[0]['Output'] is None
+    assert 'imagem vinculada' in results[0]['Error']
+
 def test_pptx_pdf_all_slides_and_aspect():
     code,results=convert([B/'Seminário com imagens.pptx'],'pdf');assert code==0,results
     with fitz.open(results[0]['Output']) as pdf:

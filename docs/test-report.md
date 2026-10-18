@@ -61,3 +61,11 @@ Uma execução inicial no sandbox não conseguiu iniciar processos Win32 e renom
 - O funcionamento local foi verificado pelos motores usados e pela ausência de chamadas de rede no código do aplicativo. Não foi feita captura de tráfego nem teste com o adaptador de rede desligado.
 - Não há promessa de fidelidade universal. PDF → Word e OCR precisam de revisão; PDF → PPTX usa imagens. Fontes/efeitos não suportados pelo LibreOffice podem diferir.
 - O GitHub Actions foi preparado para execução futura; nenhum resultado remoto foi presumido.
+
+## Atualização 1.0.1 — modelo externo do Word
+
+O relato posterior do usuário mostrou que um vínculo `attachedTemplate` bloqueava documentos com conteúdo incorporado. A correção desvincula somente esse modelo na cópia temporária, mantendo a recusa de imagens/dados que realmente dependem de recursos externos.
+
+Suíte atual: **26/26 testes pytest aprovados em 80,79 segundos**. Três DOCX reais foram convertidos em cópias privadas, com 11 páginas em cada PDF e hashes originais preservados. Um teste HTTP confirmou zero consultas ao modelo externo. O motor instalado foi atualizado em dois arquivos e o documento original do erro gerou um PDF válido de 11 páginas na mesma pasta. A primeira página publicada foi inspecionada visualmente.
+
+Detalhes, métricas e limites: `docs/external-template-fix.md`. O XML atual em `test-results/integration.xml` corresponde aos 26 testes; o pacote `artifacts/ConversorLocal-1.0.0-test-evidence.zip` preserva a evidência histórica dos 15 testes da primeira versão. Os testes nativos, de instalação/desinstalação e de interface descritos acima são resultados da 1.0.0, não novas execuções nesta correção.

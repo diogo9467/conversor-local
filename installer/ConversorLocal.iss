@@ -1,4 +1,4 @@
-#define AppVersion "1.0.0"
+#define AppVersion "1.0.1"
 #define AppSource "..\.build\app"
 [Setup]
 AppId={{DBB2BF33-A215-42BD-B45A-07EC023A892A}
@@ -12,7 +12,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.19041
 OutputDir=..\artifacts
-OutputBaseFilename=ConversorLocal-1.0.0-win-x64-Setup
+OutputBaseFilename=ConversorLocal-{#AppVersion}-win-x64-Setup
 SetupIconFile=..\src\Conversor.App\app.ico
 UninstallDisplayIcon={app}\ConversorLocal.exe
 Compression=lzma2/fast
