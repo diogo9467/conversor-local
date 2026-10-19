@@ -1,0 +1,111 @@
+{
+  "date": "2026-10-19",
+  "branch": "codex/android-offline",
+  "windows_base_commit": "54c1a2c05c4a61e2bedadc8dce1a4693b4d7ef78",
+  "windows_files_changed": false,
+  "host": {
+    "os": "Windows 11 x64",
+    "java": "Microsoft OpenJDK 17.0.19",
+    "gradle": "8.11.1",
+    "jvm_tests": {
+      "tests": 2,
+      "failures": 0
+    },
+    "lint": {
+      "errors": 0,
+      "warnings": 13
+    }
+  },
+  "emulator": {
+    "api": 35,
+    "android": "15",
+    "abi": "x86_64",
+    "physical_device": false,
+    "airplane_mode": true,
+    "wifi_enabled": false,
+    "mobile_data_enabled": false,
+    "instrumented_tests": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "coverage": [
+      "4 real conversions",
+      "generated DOCX and PPTX reopened by bundled LibreOfficeKit",
+      "text markers across 3 pages/slides",
+      "3 valid repeated PNG images and 3 editable tables in PDF-derived DOCX",
+      "mixed PDF page proportions fit without cropping or distortion",
+      "real ACTION_OPEN_DOCUMENT and ACTION_OPEN_DOCUMENT_TREE",
+      "SEND and SEND_MULTIPLE",
+      "accented names and numeric collision suffixes",
+      "original bytes and existing output preserved",
+      "read-only folder rejection",
+      "persistent tree permission reuse without assuming file URI parent rights",
+      "small batch continues after corrupt file",
+      "scan, scan with selectable page number, password rejection",
+      "cancellation and private cache cleanup",
+      "rotation during conversion and result retention",
+      "light and dark UI"
+    ]
+  },
+  "arm64": {
+    "compiled": true,
+    "apk_install_signature_verified": true,
+    "elf_machine": 183,
+    "all_native_libraries_min_alignment": 16384,
+    "executed": false,
+    "physical_device_tested": false,
+    "apk": "ConversorLocal-android-0.1.0-arm64-debug.apk",
+    "bytes": 116535540,
+    "sha256": "9f0620eb9de18a0f10137a615f2ffd3f3bbff4d4db76db4a13473341178facc6"
+  },
+  "routes": {
+    "DOCX_PDF": {
+      "fixture": "artigo.docx",
+      "output_pdf_pages": 3,
+      "images": 3,
+      "all_page_markers_found": true
+    },
+    "PPTX_PDF": {
+      "fixture": "seminario.pptx",
+      "output_pdf_pages": 3,
+      "includes_hidden_slide": true,
+      "images": 3,
+      "all_slide_markers_found": true
+    },
+    "PDF_PPTX": {
+      "fixture": "pesquisa.pdf",
+      "slides": 3,
+      "page_images": 3,
+      "generated_office_reopen_passed": true,
+      "mixed_proportions_fixture": "misto.pdf"
+    },
+    "PDF_DOCX": {
+      "fixture": "pesquisa.pdf",
+      "editable_text": true,
+      "editable_tables": 3,
+      "valid_png_images": 3,
+      "image_dimensions": [
+        700,
+        350
+      ],
+      "ordered_page_markers": true,
+      "generated_office_reopen_passed": true,
+      "reopened_pdf_pages": 3
+    }
+  },
+  "limits": [
+    "No OCR; image-heavy pages with insufficient selectable text are rejected",
+    "PDF to DOCX layout, paragraph breaks and reading order require review",
+    "ARM64 package compiled and inspected; execution on ARM64 and physical phones/tablets remains unverified",
+    "Synthetic-provider SAF tests do not cover every cloud/storage provider"
+  ],
+  "commands": [
+    "python tools/prepare_engines.py --abis arm64-v8a,x86_64",
+    "gradlew.bat assembleDebug testDebugUnitTest lintDebug",
+    "gradlew.bat connectedDebugAndroidTest -Pabis=x86_64",
+    "python tools/verify_apk.py ../artifacts/android/ConversorLocal-android-0.1.0-arm64-debug.apk --abi arm64-v8a",
+    "apksigner verify --verbose --print-certs <apk>"
+  ]
+}

@@ -1,0 +1,7 @@
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+*.docx binary
+*.pptx binary
+*.pdf binary
+app/src/main/assets/licenses/** -text

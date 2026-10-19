@@ -1,0 +1,37 @@
+Conversor Local Android 0.1.0
+Copyright 2026 Diogo / contributors. AGPL-3.0-or-later.
+Source: https://github.com/diogo9467/conversor-local/tree/codex/android-offline/android
+
+LibreOfficeKit 26.2.6.3
+Copyright The Document Foundation, LibreOffice contributors and component authors.
+MPL-2.0 and the licenses of its bundled components (including LGPL, BSD, Apache,
+font and other notices in the upstream source distribution).
+Pinned native Android builds by F-Droid, extracted without installing the Viewer.
+ARM64 corresponding source: https://f-droid.org/repo/org.documentfoundation.libreoffice_131_src.tar.gz
+x86_64 corresponding source: https://f-droid.org/repo/org.documentfoundation.libreoffice_129_src.tar.gz
+Build recipes: https://gitlab.com/fdroid/fdroiddata/-/blob/master/metadata/org.documentfoundation.libreoffice.yml
+Core source: https://github.com/LibreOffice/core/tree/libreoffice-26.2.6.3
+The four upstream JNI Java classes retain their MPL notices. The generated
+LibreOfficeKit.java accepts Context instead of Activity, to run inside a Service.
+No native LibreOffice code has been modified. Full engine source archives are
+available at the exact links above; see README for obtaining/building sources.
+
+MuPDF / Extract 1.28.5
+Copyright Artifex Software, Inc. and contributors. AGPL-3.0-or-later.
+Android Java API from the official AAR; JNI compiled from pinned source with
+NDK 27.2.12479018. Checksums and source URLs in engine-lock.json.
+Source: https://github.com/ArtifexSoftware/mupdf/tree/1.28.5
+Source archive: https://mupdf.com/downloads/archive/mupdf-1.28.5-source.tar.gz
+The native MuPDF DOCX writer performs layout reconstruction, table recognition
+and image extraction. This application does not implement an alternative layout engine.
+The source patch in tools/patch_mupdf.py fixes PNG image ownership/geometry,
+retains image relations across pages, emits required OOXML image dimensions and
+integer font sizes, and matches ZIP local/central flags and Deflate version.
+
+AndroidX / Jetpack Compose: Apache-2.0 (Android Open Source Project).
+Kotlin and kotlinx.coroutines: Apache-2.0 (JetBrains and contributors).
+The empty PPTX template was generated for this application with python-pptx;
+it contains no personal content. Android PdfRenderer is part of Android.
+
+No engine is downloaded by the Android app. This build declares no INTERNET or
+all-files-access permission. Licenses are included in assets/licenses/.

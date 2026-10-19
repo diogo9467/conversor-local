@@ -1,0 +1,22 @@
+{
+  "libreoffice": {
+    "version": "26.2.6.3",
+    "source_ref": "libreoffice-26.2.6.3",
+    "artifacts": {
+      "arm64-v8a": {"url": "https://f-droid.org/repo/org.documentfoundation.libreoffice_131.apk", "sha256": "751ac3836890b79a56801bf6d9a2788cda3761ab5131a4f0b6abfbad822bb475"},
+      "x86_64": {"url": "https://f-droid.org/repo/org.documentfoundation.libreoffice_129.apk", "sha256": "cfaf9eea5fd695c449e92eb10cc0b1617ec51d068345068cea9b7e1c67968df5"}
+    },
+    "java": {
+      "DirectBufferAllocator.java": "4472c23cc0e73c9406fc13625c7ae24296e6def46c7ff94560e9dd1efea3957c",
+      "Document.java": "321461b4c99788895b7470e25c3fc950ee1b2c3f982c12d67096497b188b6d68",
+      "LibreOfficeKit.java": "f487c7c16ac5d4313d6c38ba2328c3dade2bf504b376e6c0f1b13eaa12ec3f9d",
+      "Office.java": "e2b8bf695095dcd172e7f2a5398574376f648899922a930d19d566d16f9c169a"
+    }
+  },
+  "mupdf": {
+    "version": "1.28.5",
+    "aar_sha256": "e6887a242882cdd2dce062430bb46b6727513e3eb94e222255cc1a37db7a7d8e",
+    "source_url": "https://mupdf.com/downloads/archive/mupdf-1.28.5-source.tar.gz",
+    "source_sha256": "98a5c10cda20c3992cdf76ff6b2a1149c32bd79cc796d3f703230b1185b7e934"
+  }
+}

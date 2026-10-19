@@ -1,0 +1,5 @@
+APP_PLATFORM := android-26
+APP_OPTIM := release
+APP_STL := c++_static
+APP_SUPPORT_FLEXIBLE_PAGE_SIZES := true
+APP_SHORT_COMMANDS := true
