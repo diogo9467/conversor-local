@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/CollaboraOnline/online.mirror.git",
+  "canonical_repository": "https://gerrit.collaboraoffice.com/online",
+  "tag": "cp-26.04.4-2",
+  "commit": "201368fc8ded1a0f28d1891c77e0410cb9416531",
+  "version": "26.04.4.2",
+  "translations_repository": "https://gerrit.collaboraoffice.com/translations",
+  "translations_commit": "17fb3698d5e86169d44076f7a992c572f8f780f1",
+  "converter_baseline": "7f1490c2f8cc21acdb456e09d72b0af55c5d6c84",
+  "application_id": "dev.diogo.officelocal",
+  "android_sdk": 37,
+  "android_platform": "platforms/android-37.0",
+  "android_build_tools": "37.0.0",
+  "android_ndk": "29.0.14206865",
+  "jdk": 21,
+  "gradle": "9.5.0",
+  "gradle_distribution_sha256": "a3c4ba4aca8f0075688b9c5b18939fd28e8cb4357c227da5c1d9f38343791439",
+  "agp": "9.3.0",
+  "command_line_tools": "23.0",
+  "command_line_tools_sha256": "0877a1d048fe4a24efe2eff536ca4223f7adeb58648bb81909d33c446918cfa8",
+  "node": "22.20.0",
+  "node_linux_x64_sha256": "00bbd05e306ea68b6e13e17360d0e2f680b493ef95f2fea1c4296ff7437530bc"
+}

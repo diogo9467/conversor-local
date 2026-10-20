@@ -1,0 +1,8 @@
+<resources>
+    <style name="OfficeLocalTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#185ABD</item><item name="colorPrimaryVariant">#124A9E</item>
+        <item name="colorSecondary">#185ABD</item><item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:statusBarColor">#185ABD</item><item name="android:windowLightStatusBar">false</item>
+        <item name="android:fontFamily">sans</item><item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>
