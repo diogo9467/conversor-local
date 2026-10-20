@@ -22,7 +22,7 @@ class SuiteHomeTest {
         val proof = File(context.cacheDir, "upstream-proof").apply { mkdirs() }
         fun home() {
             context.startActivity(Intent(context, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            assertTrue(device.wait(Until.hasObject(By.text("Espaço para suas ideias.")), 10000))
+            assertTrue(device.wait(Until.hasObject(By.text("Criar novo")), 10000))
             SystemClock.sleep(1800)
         }
         try {

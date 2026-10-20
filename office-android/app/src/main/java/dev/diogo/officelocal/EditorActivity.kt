@@ -4,6 +4,11 @@ package dev.diogo.officelocal
 import android.app.Activity
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
+import android.content.res.ColorStateList
+import android.text.TextUtils
 import android.view.KeyEvent
 import android.content.ClipData
 import android.content.Intent
@@ -260,16 +265,32 @@ class EditorActivity : LOActivity() {
         val content = findViewById<ViewGroup>(android.R.id.content)
         val original = content.getChildAt(0); content.removeView(original)
         val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(16, 2, 16, 2); gravity = android.view.Gravity.CENTER_VERTICAL }
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(10), 0, dp(16), 0); gravity = android.view.Gravity.CENTER_VERTICAL }
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bar) { view, insets ->
-            view.setPadding(16, insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars()).top, 16, 2)
+            view.setPadding(dp(10), insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars()).top, dp(16), 0)
             insets
         }
-        label = TextView(this).apply { text = session.name; maxLines = 1; textSize = 13f }
-        val menu = Button(this).apply { text = "Arquivo"; contentDescription = "Ações do Office Local"; isAllCaps = false }
+        val home = ImageButton(this).apply {
+            setImageResource(resources.getIdentifier("office_icon", "drawable", packageName))
+            setPadding(dp(10), dp(10), dp(10), dp(10)); scaleType = ImageView.ScaleType.FIT_CENTER
+            background = RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), null, null)
+            contentDescription = "Página inicial"
+            setOnClickListener { startActivity(Intent(this@EditorActivity, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)) }
+        }
+        label = TextView(this).apply {
+            text = session.name; maxLines = 1; textSize = 14f; ellipsize = TextUtils.TruncateAt.END
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            setPadding(dp(8), 0, dp(18), 0)
+        }
+        val menu = Button(this).apply {
+            text = "Arquivo  ▾"; contentDescription = "Ações do Office Local"; isAllCaps = false; textSize = 14f
+            stateListAnimator = null; minHeight = 0; minimumHeight = 0
+            setPadding(dp(16), 0, dp(16), 0)
+        }
         fileBar = bar; fileButton = menu; updateFileBarTheme()
+        bar.addView(home, LinearLayout.LayoutParams(dp(52), dp(54)))
         bar.addView(label, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        bar.addView(menu)
+        bar.addView(menu, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(38)))
         menu.setOnClickListener {
             val popup = PopupMenu(this, menu)
             val actions = linkedMapOf<String, () -> Unit>(
@@ -293,12 +314,16 @@ class EditorActivity : LOActivity() {
     }
     private fun updateFileBarTheme() {
         val dark = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        fileBar?.setBackgroundColor(Color.parseColor(if (dark) "#142522" else "#FDFBF7"))
-        label?.setTextColor(Color.parseColor(if (dark) "#E3EBE2" else "#213A34"))
-        fileButton?.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor(if (dark) "#23453D" else "#E3EBE2"))
-        fileButton?.setTextColor(Color.parseColor(if (dark) "#9DDBCA" else "#216A5F"))
-        androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !dark
+        fileBar?.setBackgroundColor(Color.parseColor(if (dark) "#122B50" else "#185ABD"))
+        label?.setTextColor(Color.WHITE)
+        fileButton?.backgroundTintList = null
+        fileButton?.background = RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), GradientDrawable().apply {
+            setColor(0x22FFFFFF); cornerRadius = dp(5).toFloat(); setStroke(dp(1), 0x55FFFFFF)
+        }, null)
+        fileButton?.setTextColor(Color.WHITE)
+        androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
     }
+    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
     private fun <T> work(task: () -> T, done: (T) -> Unit) {
         lifecycleScope.launch {
             try { done(withContext(Dispatchers.IO) { task() }) }

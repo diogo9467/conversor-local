@@ -68,6 +68,10 @@ replace(activity, '    protected void onNewIntent(Intent intent) {',
 replace(activity, '    private void updateDarkMode() {',
     '    protected boolean handleOfficeIntent(Intent intent) { return false; }\n\n    private void updateDarkMode() {')
 replace(activity, 'mlp.topMargin = insets.top;', 'mlp.topMargin = 0; // Office Local header handles the status bar inset.')
+replace(activity, '''                } else if (mIsEditModeActive) {
+                    callFakeWebsocketOnMessage("mobile: readonlymode");
+                    return;
+                }''', '''                } // Office Local: Back uses the existing save/recovery exit dialog.''')
 old_save = 'postMobileMessageNative("save dontTerminateEdit=1 dontSaveIfUnmodified=1");'
 source = activity.read_text()
 if 'protected void saveWorkingCopy()' not in source:
@@ -77,6 +81,40 @@ if 'protected void saveWorkingCopy()' not in source:
     activity.write_text(source)
 native_activity = lib / 'src/main/cpp/androidapp.cpp'
 ui_manager = upstream / 'browser/src/control/Control.UIManager.ts'
+replace(ui_manager, 'enterReadonlyOrClose(): void {',
+    'enterReadonlyOrClose(): void {\n\t\tif (window.ThisIsTheAndroidApp) { app.dispatcher.dispatch(\'closeapp\'); return; } // Office Local has one editing mode.')
+permission = upstream / 'browser/src/control/Permission.js'
+# Migrate the earlier overlay on incremental builds. Entering edit before the
+# presentation notebookbar is ready can block its layout queue.
+permission_text = permission.read_text().replace(
+    'if (firstOpen && (this._shouldStartReadOnly() || (!window.ThisIsTheAndroidApp && (window.mode.isSmallScreenDevice() || window.mode.isTablet())))) { // Office Local edits its private working copy immediately.',
+    'if (firstOpen && (this._shouldStartReadOnly() || window.mode.isSmallScreenDevice() || window.mode.isTablet())) {')
+permission.write_text(permission_text)
+replace(permission,
+    'if (firstOpen && (this._shouldStartReadOnly() || window.mode.isSmallScreenDevice() || window.mode.isTablet())) {',
+    'if (firstOpen && (window.ThisIsTheAndroidApp || this._shouldStartReadOnly() || window.mode.isSmallScreenDevice() || window.mode.isTablet())) { // Office Local waits for the initial layout, then edits automatically.')
+replace(permission, "\t\t\t\tthis._enterReadOnlyMode('readonly');", """\t\t\t\tthis._enterReadOnlyMode('readonly');
+\t\t\t\tif (window.ThisIsTheAndroidApp && !isPDF && !this._shouldStartReadOnly()) {
+\t\t\t\t\t// No user mode switch: start editing after the document and its
+\t\t\t\t\t// initial ribbon have loaded, using the upstream layout barrier.
+\t\t\t\t\tvar editWhenReady = function () {
+\t\t\t\t\t\tif (!that._docLoaded) return;
+\t\t\t\t\t\tthat.off('docloaded', editWhenReady);
+\t\t\t\t\t\tapp.layoutingService.onDrain(function () {
+\t\t\t\t\t\t\tif (app.file.permission === 'edit' && !that._shouldStartReadOnly()) that._switchToEditMode();
+\t\t\t\t\t\t});
+\t\t\t\t\t};
+\t\t\t\t\tthis.on('docloaded', editWhenReady);
+\t\t\t\t\teditWhenReady();
+\t\t\t\t}""")
+replace(permission, "if (!isPDF && (window.mode.isSmallScreenDevice() || window.mode.isTablet())) {",
+    "if (!window.ThisIsTheAndroidApp && !isPDF && (window.mode.isSmallScreenDevice() || window.mode.isTablet())) { // No edit-mode FAB in Office Local.")
+replace(upstream / 'browser/src/control/PermissionMode.ts', 'init(): void {\n\t\tthis.setupContainer();',
+    'init(): void {\n\t\tif (window.ThisIsTheAndroidApp) return; // Office Local does not offer a viewing/editing switch.\n\t\tthis.setupContainer();')
+# The last bundled stylesheet keeps the overlay small and does not touch tiles.
+chrome = upstream / 'browser/css/settings.css'
+chrome_marker = '/* Office Local chrome overlay */'
+chrome.write_text(chrome.read_text().split(chrome_marker)[0].rstrip() + '\n\n' + chrome_marker + '\n' + (suite / 'ui/office-local.css').read_text())
 replace(ui_manager, 'initDarkBackgroundUI(activate: boolean): void {',
     'initDarkBackgroundUI(activate: boolean): void {\n\t\tif (window.ThisIsTheAndroidApp) activate = false; // Office Local keeps the document palette light.')
 replace(ui_manager, 'isBackgroundDark(): boolean {',
@@ -100,8 +138,8 @@ text += """
 // Office Local: integrated application
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 android.buildFeatures.compose = true
-android.defaultConfig.versionCode = 100
-android.defaultConfig.versionName = '0.2.0-test'
+android.defaultConfig.versionCode = 101
+android.defaultConfig.versionName = '0.2.1-test'
 android.buildTypes.debug.applicationIdSuffix = ''
 android.buildTypes.debug.resValue 'string', 'app_name', 'Office Local'
 android.defaultConfig.testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
@@ -128,7 +166,7 @@ gradle.write_text(text)
 
 # Asset extraction is versioned by our actual sources as well as upstream revision.
 digest = hashlib.sha256()
-for directory in (suite / "app", suite / "native", suite / "tools"):
+for directory in (suite / "app", suite / "native", suite / "tools", suite / "ui"):
     for path in sorted(directory.rglob("*")):
         if path.is_file() and "__pycache__" not in path.parts: digest.update(path.read_bytes())
 lib_gradle = lib / "build.gradle"
@@ -150,6 +188,19 @@ text = text.replace('"${name(folder)} · $folder"', 'name(folder)')
 documents.write_text(text)
 activity = app / "src/main/java/dev/diogo/conversorlocal/MainActivity.kt"
 text = activity.read_text().replace("Conversor Local", "Conversor · Office Local")
+text = text.replace('    val colors = if (isSystemInDarkTheme()) darkColorScheme(primary = Color(0xFF8DD5CD)) else lightColorScheme(primary = Color(0xFF14665E))\n    MaterialTheme(colorScheme = colors) {',
+    '    dev.diogo.officelocal.OfficeTheme {')
+text = text.replace('        Scaffold { padding ->', '''        Scaffold(topBar = { dev.diogo.officelocal.OfficeAppBar("Conversor", onHome = {
+            context.startActivity(Intent(context, dev.diogo.officelocal.HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+        }) }) { padding ->''')
+text = text.replace('    Card(Modifier.fillMaxWidth()) {',
+    '    OutlinedCard(Modifier.fillMaxWidth(), colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {')
+text = text.replace('Text("Conversor · Office Local", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)',
+    'Text("Converter arquivos", style = MaterialTheme.typography.headlineSmall)')
+text = text.replace('Text("Seus documentos, no seu aparelho.", style = MaterialTheme.typography.titleMedium)',
+    'Text("Escolha os arquivos, o formato e onde salvar.", color = MaterialTheme.colorScheme.onSurfaceVariant)')
+text = text.replace('Button(enabled = !state.busy,', 'Button(shape = MaterialTheme.shapes.small, enabled = !state.busy,')
+text = text.replace('Button(onClick = model::convert,', 'Button(shape = MaterialTheme.shapes.small, onClick = model::convert,')
 text = text.replace('                                Text(saved.uri.toString(), style = MaterialTheme.typography.bodySmall)\n', '')
 text = text.replace("Intent(Intent.ACTION_VIEW).setDataAndType(saved.uri, saved.mime)", "Intent(context, dev.diogo.officelocal.HomeActivity::class.java).setAction(Intent.ACTION_VIEW).setDataAndType(saved.uri, saved.mime)")
 text = text.replace('setDataAndType(saved.uri, saved.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)', 'setDataAndType(saved.uri, saved.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)')
@@ -186,7 +237,7 @@ for path in (app / "src/androidTest").rglob("*"):
     text = text.replace('grantUriPermission("dev.diogo.conversorlocal",', 'grantUriPermission("dev.diogo.officelocal",')
     path.write_text(text)
 
-notice = """Office Local 0.2.0 — versão de teste, assinatura de desenvolvimento.
+notice = """Office Local 0.2.1 — versão de teste, assinatura de desenvolvimento.
 Aplicativo independente; não é o produto oficial da Collabora.
 Código e receitas: https://github.com/diogo9467/conversor-local/tree/codex/office-local-android
 

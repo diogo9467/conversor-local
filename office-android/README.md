@@ -4,9 +4,11 @@ Suíte offline para tablets, baseada no aplicativo Android real do Collabora Off
 
 A integração aplica uma camada pequena sobre uma revisão fixa do upstream, sem importar seu histórico. `android/`, Windows e os workflows existentes permanecem preservados. Consulte a [referência anterior](docs/baseline.md) e o [relatório de validação](docs/validation.md).
 
-[Baixar a prévia Android 0.2.0](https://github.com/diogo9467/conversor-local/releases/tag/office-android-v0.2.0-test.1) — APKs, hashes, fontes e evidências. Para o tablet, escolha `OfficeLocal-0.2.0-arm64-test.apk` (aproximadamente 400 MB).
+[Baixar a prévia Android 0.2.1](https://github.com/diogo9467/conversor-local/releases/tag/office-android-v0.2.1-test.1) — interface azul, edição direta, APKs, hashes, fontes e evidências. Para o tablet, escolha `OfficeLocal-0.2.1-arm64-test.apk` (aproximadamente 400 MB). Instale por cima da prévia 0.2.0, com a mesma assinatura, para preservar suas cópias locais.
 
-![Tela inicial no emulador de tablet](docs/images/home-wide-light.png)
+![Tela inicial no emulador de tablet](docs/images/0.2.1/home-wide-light.png)
+
+Confira as mudanças e evidências no [relatório da interface 0.2.1](docs/visual-refresh.md).
 
 ## Usar
 
@@ -14,7 +16,7 @@ Instale o APK **ARM64** da entrega no tablet com Android 8 ou posterior. O pacot
 
 - **Abrir arquivo** usa o seletor Android: DOCX/ODT, XLSX/ODS, PPTX/ODP e PDF para consulta.
 - **Documento, Planilha e Apresentação** criam arquivos novos. As ferramentas de edição são as do Collabora.
-- Se o documento abrir em modo de consulta, toque no **lápis** para ativar a edição. PDFs permanecem para consulta; use Converter para gerar um DOCX editável.
+- Documentos, planilhas e apresentações abrem **diretamente em edição**, sem seletor de modos ou lápis flutuante. PDFs permanecem para consulta; use Converter para gerar um DOCX editável.
 - **Arquivo → Salvar** atualiza o original somente com permissão efetiva de escrita, depois de salvar a cópia de trabalho e conferir a gravação por leitura. Se o original mudou externamente, pede uma nova cópia.
 - **Salvar como…** escolhe formato e pasta. **Exportar PDF** usa o estado atual e cria outro arquivo. Colisões recebem `(1)`, `(2)` etc.
 - Exportações/conversões usam a pasta original apenas quando há autorização de diretório e ela é identificável pelo provedor. Nos demais casos aparece o seletor de destino.
@@ -88,6 +90,12 @@ python3 /caminho/office-android/tools/run_suite_proof.py --adb /caminho/adb \
 python3 /caminho/office-android/tools/run_suite_proof.py --adb /caminho/adb \
   --serial emulator-5580 --test-apk /caminho/testes-editor.apk --mode editor \
   --formats docx --phases keyboard,resize --output /caminho/prova-teclado
+python3 /caminho/office-android/tools/run_suite_proof.py --adb /caminho/adb \
+  --serial emulator-5580 --test-apk /caminho/testes-editor.apk --mode editor \
+  --formats docx --phases readonly --output /caminho/prova-somente-leitura
+python3 /caminho/office-android/tools/run_suite_proof.py --adb /caminho/adb \
+  --serial emulator-5580 --test-apk /caminho/testes-editor.apk --mode editor \
+  --formats pdf --phases pdf --output /caminho/prova-pdf
 # Requer PyMuPDF e Pillow no ambiente Python de verificação.
 python3 /caminho/office-android/tools/verify_editor_outputs.py \
   /caminho/prova-editor/upstream-proof --report /caminho/auditoria-editor.json
@@ -112,6 +120,6 @@ Office Local é uma adaptação independente. A camada própria e o conversor s�
 - MuPDF 1.28.5/Extract: URL/hash em `../android/engine-lock.json`, correção em `../android/tools/patch_mupdf.py`, receita em `../android/tools/build_mupdf.py` e `tools/prepare_mupdf.py`. O código-fonte correspondente acompanha a entrega.
 - Integração, testes e receitas: esta branch. Dependências Java/Android declaradas no instalador e no upstream fixado.
 
-A entrega inclui o arquivo completo do Collabora/engine, o catálogo pt-BR, MuPDF/Extract, o código desta integração e `collabora-native-dependencies-source.tar.gz`: os 111 arquivos de dependências nativas e fontes tipográficas baixados pela construção, com manifesto SHA-256. Para reaproveitar esse último arquivo após o bootstrap, extraia seu diretório `native-dependencies/` em `upstream/engine/external/tarballs/`. Não é necessário distribuir nem instalar esses fontes no tablet; o APK já contém o necessário para funcionar.
+A entrega 0.2.1 inclui o código desta integração e seus patches. Os componentes que não mudaram continuam nos [arquivos-fonte da entrega 0.2.0](https://github.com/diogo9467/conversor-local/releases/tag/office-android-v0.2.0-test.1): Collabora/engine completo, catálogo pt-BR, MuPDF/Extract e `collabora-native-dependencies-source.tar.gz`, com os 111 arquivos de dependências nativas e fontes tipográficas baixados pela construção e seu manifesto SHA-256. Para reaproveitar esse último arquivo após o bootstrap, extraia seu diretório `native-dependencies/` em `upstream/engine/external/tarballs/`. Não é necessário distribuir nem instalar esses fontes no tablet; o APK já contém o necessário para funcionar.
 
 O [guia Android do Collabora](https://www.collaboraoffice.org/post/build-code-android/) descreve a construção mobile. Esta receita usa as versões exigidas pela revisão fixada.

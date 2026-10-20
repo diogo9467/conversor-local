@@ -65,7 +65,7 @@ class SuiteFlowTest {
         SystemClock.sleep(12000)
         device.takeScreenshot(File(proof, "pdf-consultation.png"))
         device.findObject(By.desc("Ações do Office Local")).click(); tap("Converter")
-        assertTrue(device.wait(Until.hasObject(By.text("Conversor · Office Local")), 30000))
+        assertTrue(device.wait(Until.hasObject(By.text("Converter arquivos")), 30000))
         tap("DOCX"); tap("Escolher pasta")
         click(By.desc("Show roots"))
         SystemClock.sleep(400)

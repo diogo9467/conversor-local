@@ -40,7 +40,11 @@ class SuiteEditorTest {
     private fun js(editor: EditorActivity, script: String): String {
         val done = CountDownLatch(1); var result = ""
         inst.runOnMainSync { editor.findViewById<WebView>(org.libreoffice.androidlib.R.id.browser).evaluateJavascript(script) { result = it; done.countDown() } }
-        assertTrue(done.await(10, TimeUnit.SECONDS)); return result
+        if (!done.await(10, TimeUnit.SECONDS)) {
+            device.takeScreenshot(File(folder, "javascript-timeout.png"))
+            fail("Editor JavaScript did not respond within 10 seconds")
+        }
+        return result
     }
     private fun waitFor(message: String, seconds: Int = 60, condition: () -> Boolean) {
         val end = SystemClock.elapsedRealtime() + seconds * 1000
@@ -60,7 +64,7 @@ class SuiteEditorTest {
     private fun open(session: EditingSession): EditorActivity {
         val editor = inst.startActivitySync(Intent(target, EditorActivity::class.java)
             .putExtra("session", session.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as EditorActivity
-        waitFor("Real editor did not load", 120) { js(editor, "!!(window.app && app.map && app.map._docLoaded && window.RenderManager && Array.from(RenderManager.getTiles().values()).some(t=>t.isReadyToDraw()))") == "true" }
+        waitFor("Real editor did not load ready for use", 120) { js(editor, "!!(window.app && app.map && app.map._docLoaded && (${session.extension == "pdf"} || app.map.isEditMode()) && window.RenderManager && Array.from(RenderManager.getTiles().values()).some(t=>t.isReadyToDraw()))") == "true" }
         assertEquals("Bundled editor stylesheet applied", "true", js(editor, "getComputedStyle(document.body).overflow==='hidden' && getComputedStyle(document.getElementById('map')).position==='absolute'"))
         return editor
     }
@@ -95,7 +99,7 @@ class SuiteEditorTest {
             try { text.asText() } finally { text.destroy(); page.destroy() }
         } } finally { pdf.destroy() }
     }
-    private fun grantedFixture(asset: String, extension: String): Uri {
+    private fun grantedFixture(asset: String, extension: String, flags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION): Uri {
         val name = "Editor ${System.nanoTime()}.$extension"
         val uri = DocumentsContract.buildDocumentUri("dev.diogo.officelocal.tests.documents", "item:$name")
         val done = CountDownLatch(1); var failure: String? = null
@@ -104,7 +108,7 @@ class SuiteEditorTest {
         }
         target.startActivity(Intent().setComponent(ComponentName(inst.context.packageName, TestGrantActivity::class.java.name))
             .putExtra("reply", reply).putExtra("uri", uri.toString()).putExtra("asset", asset).putExtra("name", name)
-            .putExtra("flags", Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            .putExtra("flags", flags)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         assertTrue(done.await(10, TimeUnit.SECONDS)); assertNull(failure)
         return uri
@@ -116,12 +120,13 @@ class SuiteEditorTest {
         val phase = arguments.getString("phase", "edit")!!
         val marker = "OFFICE_LOCAL_${extension.uppercase()} ação"
         val idFile = File(folder, "suite-$extension.id")
-        val fixture = when (extension) { "xlsx" -> "calculos.xlsx"; "pptx" -> "seminario.pptx"; else -> "artigo.docx" }
+        val fixture = when (extension) { "xlsx" -> "calculos.xlsx"; "pptx" -> "seminario.pptx"; "pdf" -> "pesquisa.pdf"; else -> "artigo.docx" }
         val source = File(folder, "suite-source.$extension")
-        val session = if (phase == "new" || phase == "keyboard") store.create(extension) else if (phase == "odf") store.read(File(folder, "odf-$extension.id").readText()) else if (phase == "edit") {
+        val session = if (phase == "new" || phase == "keyboard") store.create(extension) else if (phase == "odf") store.read(File(folder, "odf-$extension.id").readText()) else if (phase in setOf("edit", "readonly", "pdf")) {
             inst.context.assets.open(fixture).use { input -> source.outputStream().use(input::copyTo) }
-            val uri = grantedFixture(fixture, extension)
-            store.import(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION, false).also { idFile.writeText(it.id) }
+            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or if (phase == "readonly") 0 else Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            val uri = grantedFixture(fixture, extension, flags)
+            store.import(uri, flags, phase == "readonly").also { if (phase == "edit") idFile.writeText(it.id) }
         } else store.read(idFile.readText())
         if (phase == "reopen") inst.runOnMainSync { target.getSystemService(UiModeManager::class.java).setApplicationNightMode(UiModeManager.MODE_NIGHT_YES) }
         val editor = open(session)
@@ -129,7 +134,43 @@ class SuiteEditorTest {
             target.contentResolver.openInputStream(Uri.parse(session.source))!!.use { source.outputStream().use(it::copyTo) }
             return xml(source, "")
         }
-        js(editor, "app.map.setPermission('edit'); true")
+        assertEquals("Documents edit immediately; PDF keeps its real capabilities", if (extension == "pdf") "false" else "true", js(editor, "app.map.isEditMode()"))
+        assertEquals("No viewing/editing switch or pencil is offered", "true", js(editor,
+            "['viewMode','mobile-edit-button','permissionmode-container'].every(id=>{const e=document.getElementById(id);return !e||getComputedStyle(e).display==='none';})"))
+        assertEquals("Office Local blue chrome loaded", "true", js(editor,
+            "getComputedStyle(document.documentElement).getPropertyValue('--office-chrome-accent').trim() === (document.documentElement.dataset.theme==='dark'?'#a8c8ff':'#185abd')"))
+        if (phase == "pdf") {
+            capture(editor, "pdf-consultation.png")
+            menu("Converter")
+            assertTrue("PDF still offers the integrated converter", device.wait(Until.hasObject(By.text("Converter arquivos")), 10000))
+            SystemClock.sleep(1000)
+            device.takeScreenshot(File(folder, "converter-light.png"))
+            inst.runOnMainSync { target.getSystemService(UiModeManager::class.java).setApplicationNightMode(UiModeManager.MODE_NIGHT_YES) }
+            SystemClock.sleep(1600)
+            device.takeScreenshot(File(folder, "converter-dark.png"))
+            inst.runOnMainSync { target.getSystemService(UiModeManager::class.java).setApplicationNightMode(UiModeManager.MODE_NIGHT_NO) }
+            return@runBlocking
+        }
+        if (phase == "readonly") {
+            assertFalse("Read-only incoming URI stays read-only", session.writable)
+            paste(editor, "COPIA_EDITAVEL ação")
+            val copy = File(folder, "read-only-edited.docx")
+            OfficeBridge.exportCurrent(copy.toURI().toString(), "docx")
+            assertTrue("The private copy is editable without a mode switch", xml(copy, "word/").contains("COPIA_EDITAVEL ação"))
+            menu("Salvar")
+            assertTrue("Save requests a destination instead of writing to the read-only origin", device.wait(Until.hasObject(By.pkg("com.android.documentsui")), 10000))
+            device.pressBack()
+            waitFor("Returned from destination picker") { !device.hasObject(By.pkg("com.android.documentsui")) }
+            originalXml()
+            assertEquals("Editing a read-only copy leaves its origin intact", session.sourceHash, Sessions.hash(source))
+            inst.runOnMainSync { editor.onBackPressedDispatcher.onBackPressed() }
+            assertTrue("Back offers recovery/exit directly, without switching to viewer", device.wait(Until.hasObject(By.text("Sair do documento?")), 10000))
+            capture(editor, "exit-dialog.png")
+            device.wait(Until.findObject(By.res("android", "button2")), 5000).click()
+            assertEquals("Continue keeps editing enabled", "true", js(editor, "app.map.isEditMode()"))
+            capture(editor, "read-only-copy-editable.png")
+            return@runBlocking
+        }
         if (phase == "resize") {
             paste(editor, " JANELA_REDIMENSIONADA ação")
             val pid = android.os.Process.myPid()
@@ -271,7 +312,7 @@ class SuiteEditorTest {
         if (extension == "docx") js(editor, "app.map.sendUnoCommand('.uno:GoToStartOfDoc'); true")
         SystemClock.sleep(1000); capture(editor, "$extension-$phase-light.png")
         inst.runOnMainSync { target.getSystemService(UiModeManager::class.java).setApplicationNightMode(UiModeManager.MODE_NIGHT_YES) }
-        waitFor("Editor controls use the dark palette") { js(editor, "document.documentElement.getAttribute('data-theme')==='dark' && getComputedStyle(document.documentElement).getPropertyValue('--color-main-background').trim()==='#121212'") == "true" }
+        waitFor("Editor controls use the dark palette") { js(editor, "document.documentElement.getAttribute('data-theme')==='dark' && getComputedStyle(document.documentElement).getPropertyValue('--color-main-background').trim()==='#1b2431'") == "true" }
         assertEquals("The page and transparent Calc cells keep their real background", "true", js(editor, "document.documentElement.getAttribute('data-bg-theme')==='light' && getComputedStyle(document.documentElement).getPropertyValue('--color-background-document').trim()==='#fff'"))
         capture(editor, "$extension-$phase-dark.png")
         val darkPdf = File(folder, "$extension-$phase-dark.pdf")
