@@ -11,7 +11,7 @@ export PATH="$JAVA_HOME/bin:$ROOT/node-v22.20.0-linux-x64/bin:$PATH"
 export GRADLE_OPTS='-Dorg.gradle.vfs.watch=false'
 ENGINE="$ROOT/engine-$ABI"
 if [ "$MODE" != prepare ]; then
-    test -s "$ENGINE/instdir/program/liblo-native-code.so"
+    test -s "$ENGINE/android/jniLibs/$ABI/liblo-native-code.so"
 fi
 cd "$ROOT/upstream"
 ./autogen.sh

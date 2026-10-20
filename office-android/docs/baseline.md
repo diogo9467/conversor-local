@@ -23,6 +23,7 @@ O motor dessa revisão expõe **COKit**, enquanto o conversor usa JNI de LibreOf
 - `kit/SetupKitEnvironment.hpp` define `CONFIGURATION_LAYERS` sem a camada de preferências comuns do usuário. Portanto, somente copiar o perfil de segurança do conversor antigo não comprova a desativação de macros no editor.
 - `engine/desktop/source/lib/init.cxx` usa `MacroExecMode::USE_CONFIG` no Android. A adaptação final deverá impor a desativação de macros no carregamento nativo, além das validações de entrada; essa alteração ainda não foi aplicada à prova inicial.
 - `engine/sal/android/cokit-jni.cxx` define `OOO_DISABLE_RECOVERY=1`. As cópias recuperáveis da suíte precisarão ficar em armazenamento privado persistente, fora de `cache/jobs`, que é descartado pelo conversor.
+- A extração inicial dos recursos é controlada por `BuildConfig.GIT_COMMIT` em `LOActivity`. Como o fork mantém o commit upstream fixo, a versão dos recursos da adaptação também precisará mudar esse identificador quando os recursos empacotados mudarem; apenas aumentar o `versionCode` não força a extração.
 
 ## Ambiente isolado
 

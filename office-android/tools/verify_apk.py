@@ -23,6 +23,12 @@ def inspect(path, abi, base_only):
             if not (entry.filename.startswith("lib/") and entry.filename.endswith(".so")):
                 continue
             assert entry.filename.split("/")[1] == abi, "Unexpected ABI: " + entry.filename
+            if entry.compress_type == zipfile.ZIP_STORED:
+                with path.open("rb") as stream:
+                    stream.seek(entry.header_offset + 26)
+                    name_length, extra_length = struct.unpack("<HH", stream.read(4))
+                data_offset = entry.header_offset + 30 + name_length + extra_length
+                assert data_offset % 16384 == 0, "APK native library offset is not 16KB aligned: " + entry.filename
             data = apk.read(entry)
             assert data[:6] == b"\x7fELF\x02\x01", "Expected 64-bit little-endian ELF"
             assert struct.unpack_from("<H", data, 18)[0] == machine, "Wrong native architecture"
@@ -33,13 +39,24 @@ def inspect(path, abi, base_only):
             assert loads and min(p[-1] for p in loads) >= 16384, "ELF alignment below 16KB: " + entry.filename
             libraries.append({"name": entry.filename, "bytes": len(data),
                               "sha256": hashlib.sha256(data).hexdigest(),
-                              "min_load_alignment": min(p[-1] for p in loads)})
+                              "min_load_alignment": min(p[-1] for p in loads),
+                              "zip_16kb_aligned": entry.compress_type == zipfile.ZIP_STORED})
         required = {"liblo-native-code.so", "libandroidapp.so"}
         if not base_only:
+            assert apk.getinfo("assets/dist/bundle.css").file_size > 100000, "Editor CSS missing or empty"
+            assert apk.getinfo("assets/dist/bundle.js").file_size > 100000, "Editor JS missing or empty"
             required.add("libmupdf_java.so")
         assert required <= {p["name"].rsplit("/", 1)[-1] for p in libraries}, "Missing native engine"
         for resource in ("assets/program/services.rdb", "assets/unpack/etc/fonts/fonts.conf"):
             assert apk.getinfo(resource).file_size > 0, "Missing runtime resource: " + resource
+        if not base_only:
+            for resource in ("assets/NOTICE.txt", "assets/license.html", "assets/notice.txt", "assets/mupdf-build.json"):
+                assert apk.getinfo(resource).file_size > 0, "Missing license/build provenance: " + resource
+            for extension in ("docx", "odt", "xlsx", "ods", "pptx", "odp"):
+                assert apk.getinfo("assets/templates/untitled." + extension).file_size > 0
+            assert not any(p["name"].endswith("liblo-native.so") for p in libraries), "Legacy engine bundled"
+            native = json.loads(apk.read("assets/mupdf-build.json"))
+            assert hashlib.sha256(apk.read("lib/" + abi + "/libmupdf_java.so")).hexdigest() == native["libraries"][abi]
     with path.open("rb") as stream:
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
     return {"apk": path.name, "bytes": path.stat().st_size, "sha256": digest,

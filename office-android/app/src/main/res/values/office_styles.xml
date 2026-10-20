@@ -1,0 +1,6 @@
+<resources>
+    <style name="OfficeLocalTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#216A5F</item><item name="colorSecondary">#A36C36</item>
+        <item name="android:fontFamily">sans</item><item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>

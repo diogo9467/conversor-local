@@ -43,12 +43,12 @@ def main():
             binary.chmod(0o755)
     env = dict(os.environ, ANDROID_HOME=str(SDK), ANDROID_SDK_ROOT=str(SDK))
     for package in ("platform-tools", "platforms/android-37.0", "build-tools/37.0.0",
-                    "ndk/29.0.14206865", "cmake/3.22.1"):
+                    "ndk/29.0.14206865", "ndk/27.2.12479018", "cmake/3.22.1"):
         subprocess.run([str(manager), "--no-metrics", "--sdk=" + str(SDK),
                         "sdk", "install", package], env=env, check=True)
     # The CLI can return success when a requested package does not exist.
     for relative in ("platforms/android-37.0/android.jar", "build-tools/37.0.0/aapt2",
-                     "ndk/29.0.14206865/source.properties", "cmake/3.22.1/bin/cmake"):
+                     "ndk/29.0.14206865/source.properties", "ndk/27.2.12479018/source.properties", "cmake/3.22.1/bin/cmake"):
         if not (SDK / relative).is_file():
             raise RuntimeError(f"Incomplete toolchain: {relative}")
     node_name = "node-v22.20.0-linux-x64"

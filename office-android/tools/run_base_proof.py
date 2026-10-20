@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import tarfile
 import zipfile
+from xml.etree import ElementTree
 
 
 def main():
@@ -38,11 +39,17 @@ def main():
     assert run("shell", "settings", "get", "global", "airplane_mode_on").stdout.strip() == "1"
     run("install", "-r", str(args.apk.resolve()), timeout=300)
     run("install", "-r", str(args.test_apk.resolve()), timeout=300)
-    result = run("shell", "am", "instrument", "-w", "-r", "-e", "class",
-                 "dev.diogo.officelocal.proof.EditorProofTest",
-                 args.package + ".test/androidx.test.runner.AndroidJUnitRunner",
-                 check=False, timeout=400)
-    (output / "instrumentation.txt").write_text(result.stdout + result.stderr, encoding="utf-8")
+    phases = []
+    for phase in ("edit", "reopen"):
+        run("shell", "am", "force-stop", args.package)
+        result = run("shell", "am", "instrument", "-w", "-r", "-e", "class",
+                     "dev.diogo.officelocal.proof.EditorProofTest", "-e", "phase", phase,
+                     args.package + ".test/androidx.test.runner.AndroidJUnitRunner",
+                     check=False, timeout=400)
+        phases.append({"phase": phase, "passed": result.returncode == 0 and "OK (1 test)" in result.stdout})
+        (output / ("instrumentation-" + phase + ".txt")).write_text(result.stdout + result.stderr, encoding="utf-8")
+        if not phases[-1]["passed"]:
+            break
     # Collect evidence even when a test fails. Never uninstall the APK here.
     with (output / "editor-files.tar").open("wb") as destination:
         pulled = subprocess.run([*adb, "exec-out", "run-as", args.package,
@@ -53,20 +60,27 @@ def main():
             archive.extractall(output, filter="data")
     logs = run("logcat", "-d", "-t", "5000", check=False)
     (output / "logcat.txt").write_text(logs.stdout, encoding="utf-8")
-    if result.returncode or "OK (1 test)" not in result.stdout:
+    if len(phases) != 2 or not all(p["passed"] for p in phases):
         print(result.stdout[-7000:])
         raise SystemExit("Editor proof did not pass; preserved logs and files in " + str(output))
     files = {}
+    with zipfile.ZipFile(output / "upstream-proof/artigo.docx") as archive:
+        source_document = ElementTree.fromstring(archive.read("word/document.xml"))
+    word = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
     for name in ("editado.docx", "reaberto.docx"):
         path = output / "upstream-proof" / name
         with zipfile.ZipFile(path) as archive:
             document = archive.read("word/document.xml").decode("utf-8")
             assert "OFFICE_LOCAL_PROOF_20261019" in document
-            assert "w:tbl" in document
-            assert len([n for n in archive.namelist() if n.startswith("word/media/")]) >= 3
+            assert "ação e edição" in document
+            actual = ElementTree.fromstring(document)
+            for element in ("drawing", "tbl"):
+                assert len(actual.findall(".//" + word + element)) == len(source_document.findall(".//" + word + element))
+            assert any(n.startswith("word/media/") for n in archive.namelist())
         files[name] = hashlib.sha256(path.read_bytes()).hexdigest()
     report = {
-        "test": "base editor: open, edit, save, close, reopen, save again",
+        "test": "base editor: open, edit, save, stop process, cold reopen, save again",
+        "phases": phases,
         "device": args.serial, "airplane_mode": True, "physical_device": False,
         "apk_sha256": hashlib.sha256(args.apk.read_bytes()).hexdigest(),
         "outputs": files,
